@@ -10,10 +10,13 @@ from database.supabase_client import get_supabase
 
 
 def get_embedding(client: genai.Client, text: str) -> List[float]:
-    """Menghasilkan vector embedding menggunakan Google GenAI SDK (text-embedding-004)."""
+    """Menghasilkan vector embedding menggunakan Google GenAI SDK."""
+    model = settings.embedding_model.replace("models/", "")
+    config = {"output_dimensionality": 768} if "gemini-embedding" in model else None
     response = client.models.embed_content(
-        model=settings.embedding_model,
+        model=model,
         contents=text,
+        config=config,
     )
     return response.embeddings[0].values
 
@@ -41,6 +44,11 @@ def ingest_file(client: genai.Client, file_path: Path):
 
         try:
             embedding = get_embedding(client, searchable_text)
+            fert = item.get("fertilizer_recommendation")
+            prev = item.get("prevention") or ""
+            if fert:
+                prev = f"{prev} [Rekomendasi Pemupukan: {fert}]" if prev else f"Rekomendasi Pemupukan: {fert}"
+
             record = {
                 "commodity": item["commodity"],
                 "disease_name": item["disease_name"],
@@ -50,8 +58,7 @@ def ingest_file(client: genai.Client, file_path: Path):
                 "mechanical_treatment": item["mechanical_treatment"],
                 "sanitation_treatment": item["sanitation_treatment"],
                 "chemical_actives": item.get("chemical_actives"),
-                "fertilizer_recommendation": item.get("fertilizer_recommendation"),
-                "prevention": item.get("prevention"),
+                "prevention": prev,
                 "embedding": embedding
             }
 

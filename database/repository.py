@@ -115,6 +115,30 @@ class ConsultationRepository:
             return []
 
     @staticmethod
+    async def get_reference_image(disease_name: str) -> Optional[str]:
+        """Mengambil link foto referensi resmi penyakit dari tabel disease_reference_images."""
+        supabase = get_supabase()
+        if not supabase or not disease_name:
+            return None
+        try:
+            # Gunakan kata kunci inti nama penyakit
+            clean_kw = disease_name.split("/")[0].split("(")[0].strip()
+            res = (
+                supabase.table("disease_reference_images")
+                .select("image_url")
+                .ilike("disease_name", f"%{clean_kw}%")
+                .limit(1)
+                .execute()
+            )
+            if res and res.data and len(res.data) > 0:
+                return res.data[0].get("image_url")
+            return None
+        except Exception as e:
+            logger.warning(f"Gagal mengambil foto referensi untuk {disease_name}: {e}")
+            return None
+
+
+    @staticmethod
     async def get_latest_market_prices(commodity: Optional[str] = None, province: Optional[str] = None) -> List[Dict[str, Any]]:
         """Mengambil data harga pasar terkini dari Supabase."""
         supabase = get_supabase()

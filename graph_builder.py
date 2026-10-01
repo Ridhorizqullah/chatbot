@@ -292,6 +292,9 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
 
         langkah = diag.get("langkah_penanganan", {})
         photo_info = "\n📸 _(Analisis Berdasarkan Bukti Foto Lapangan)_" if state.get("media_url") else ""
+        ref_image_url = await ConsultationRepository.get_reference_image(diag.get("nama_penyakit", ""))
+        ref_section = f"\n\n📷 *Foto Referensi Pembanding Resmi:*\n{ref_image_url}" if ref_image_url else ""
+
         msg = (
             f"🌿 *HASIL DIAGNOSIS TANAMAN ({diag.get('nama_tanaman', '').upper()})*{photo_info}\n\n"
             f"🎯 *Indikasi:* {diag.get('nama_penyakit')} "
@@ -303,7 +306,8 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
             f"1. *Fisik / Mekanis:*\n   {langkah.get('mekanis')}\n\n"
             f"2. *Sanitasi Lahan & Drainase:*\n   {langkah.get('sanitasi')}\n\n"
             f"3. *Bahan Aktif Kimiawi (Jika Diperlukan):*\n   {langkah.get('bahan_aktif_kimiawi') or 'Tidak diperlukan bahan kimiawi.'}\n\n"
-            f"⚠️ *Catatan Keselamatan:*\n{diag.get('catatan_keamanan')}\n\n"
+            f"⚠️ *Catatan Keselamatan:*\n{diag.get('catatan_keamanan')}"
+            f"{ref_section}\n\n"
             f"_Apabila gejala tidak membaik dalam 3-5 hari, segera hubungi PPL setempat._"
         )
         return {"final_response": msg}
