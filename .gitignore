@@ -50,3 +50,7 @@ temp/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# WAHA & Application Data
+waha_data/
+logs/
