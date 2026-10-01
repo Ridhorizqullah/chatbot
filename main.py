@@ -4,7 +4,7 @@ from core.logger import logger
 
 
 def main():
-    """Entry point untuk menjalankan TaniPintar Bot FastAPI server."""
+    """Entry point untuk menjalankan TaniPintar Bot FastAPI server (WAHA & Meta)."""
     logger.info(f"Menjalankan TaniPintar Server pada http://{settings.app_host}:{settings.app_port}")
     uvicorn.run(
         "api.app:app",

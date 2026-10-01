@@ -26,14 +26,44 @@ class DiagnosisAgent:
         if not self.client:
             return []
         try:
+            model = settings.embedding_model.replace("models/", "")
+            config = {"output_dimensionality": 768} if "gemini-embedding" in model else None
             response = self.client.models.embed_content(
-                model=settings.embedding_model,
+                model=model,
                 contents=text,
+                config=config,
             )
             return response.embeddings[0].values
         except Exception as e:
             logger.error(f"Gagal generate embedding: {e}")
             return []
+
+    def _get_candidate_models(self) -> List[str]:
+        candidates = []
+        if self.model_name:
+            candidates.append(self.model_name.replace("models/", ""))
+        for m in ["gemini-3.5-flash", "gemini-flash-latest", "gemini-3.8-flash"]:
+            if m not in candidates:
+                candidates.append(m)
+        return candidates
+
+    def _generate_structured(self, contents: Any) -> Optional[DiseaseDiagnosisResult]:
+        for model in self._get_candidate_models():
+            try:
+                response = self.client.models.generate_content(
+                    model=model,
+                    contents=contents,
+                    config={
+                        "response_mime_type": "application/json",
+                        "response_schema": DiseaseDiagnosisResult,
+                        "temperature": 0.2,
+                    }
+                )
+                if response.parsed:
+                    return response.parsed
+            except Exception as e:
+                logger.warning(f"Percobaan model '{model}' gagal: {e}. Mencoba model cadangan...")
+        return None
 
     async def diagnose_text(self, user_query: str, crop_hint: Optional[str] = None) -> DiseaseDiagnosisResult:
         """Melakukan diagnosa berbasis teks dengan pencarian semantik RAG 11 Penyakit."""
@@ -94,24 +124,14 @@ PERTANYAAN / KELUHAN PETANI:
 
 Kembalikan hasil diagnosis terstruktur sesuai skema DiseaseDiagnosisResult.
 """
-        try:
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config={
-                    "response_mime_type": "application/json",
-                    "response_schema": DiseaseDiagnosisResult,
-                    "temperature": 0.2,
-                }
-            )
-            return response.parsed
-        except Exception as e:
-            logger.error(f"Error inferensi teks Gemini: {e}")
-            return self._fallback_error_result("cabai" if (crop_hint and "cabai" in crop_hint.lower()) else "padi")
+        parsed_result = self._generate_structured(prompt)
+        if parsed_result:
+            return parsed_result
+        return self._fallback_error_result("cabai" if (crop_hint and "cabai" in crop_hint.lower()) else "padi")
 
     async def diagnose_image(self, image_bytes: bytes, user_caption: str = "") -> DiseaseDiagnosisResult:
         """
-        Melakukan diagnosa visual multimodal menggunakan Gemini 1.5 Flash Vision.
+        Melakukan diagnosa visual multimodal menggunakan Gemini Flash Vision.
         ATURAN MUTLAK: Hanya menerima foto CABAI dan PADI. Tanaman lain akan ditolak secara aman.
         """
         if not self.client:
@@ -145,19 +165,13 @@ Keterangan Tambahan Petani: "{user_caption}"
                 data=image_bytes,
                 mime_type="image/jpeg",
             )
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=[prompt, image_part],
-                config={
-                    "response_mime_type": "application/json",
-                    "response_schema": DiseaseDiagnosisResult,
-                    "temperature": 0.2,
-                }
-            )
-            return response.parsed
+            parsed_result = self._generate_structured([prompt, image_part])
+            if parsed_result:
+                return parsed_result
         except Exception as e:
-            logger.error(f"Error saat inferensi foto Gemini Vision: {e}")
-            return self._fallback_error_result("cabai")
+            logger.error(f"Error saat menyiapkan foto Gemini Vision: {e}")
+
+        return self._fallback_error_result("cabai")
 
     def _fallback_error_result(self, crop_name: str) -> DiseaseDiagnosisResult:
         return DiseaseDiagnosisResult(

@@ -6,6 +6,7 @@ from services.whatsapp_service import WhatsAppService
 
 router = APIRouter(prefix="/webhook", tags=["WhatsApp Webhook"])
 whatsapp_service = WhatsAppService()
+_PROCESSED_MESSAGE_IDS: set[str] = set()
 
 
 @router.get("")
@@ -26,13 +27,18 @@ async def verify_webhook(
     return Response(content="Verification token mismatch", status_code=status.HTTP_403_FORBIDDEN)
 
 
-async def process_incoming_message(phone_number: str, message_text: str, media_id: str | None = None):
+async def process_incoming_message(
+    phone_number: str,
+    message_text: str,
+    media_id: str | None = None,
+    session: str | None = None
+):
     """
     Background Task: Menjalankan eksekusi LangGraph & mengirimkan balasan WhatsApp.
     Dijalankan di background agar respon HTTP webhook langsung 200 OK (< 200ms) untuk mencegah timeout Meta.
     """
     try:
-        logger.info(f"Memproses pesan dari {phone_number}: '{message_text}' | Media: {media_id}")
+        logger.info(f"Memproses pesan dari {phone_number}: '{message_text}' | Media: {media_id} | Session: {session}")
 
         # Jalankan LangGraph StateGraph
         initial_state = {
@@ -51,7 +57,7 @@ async def process_incoming_message(phone_number: str, message_text: str, media_i
         final_reply = result.get("final_response", "")
 
         if final_reply:
-            await whatsapp_service.send_text_message(to_phone=phone_number, text=final_reply)
+            await whatsapp_service.send_text_message(to_phone=phone_number, text=final_reply, session=session)
 
     except Exception as e:
         logger.error(f"Gagal memproses pesan di background task: {e}", exc_info=True)
@@ -94,7 +100,7 @@ async def handle_whatsapp_event(request: Request, background_tasks: BackgroundTa
         elif msg_type == "image":
             image_obj = msg_obj.get("image", {})
             media_id = image_obj.get("id")
-            extracted_text = image_obj.get("caption", "")
+            extracted_text = image_obj.get("caption", "") or "Tolong diagnosa gejala penyakit tanaman pada foto ini."
 
         if sender_phone:
             # Jadwalkan pemrosesan di background task agar response webhook instan
@@ -109,4 +115,67 @@ async def handle_whatsapp_event(request: Request, background_tasks: BackgroundTa
 
     except Exception as e:
         logger.error(f"Error saat menerima webhook WhatsApp: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@router.post("/waha")
+async def handle_waha_event(request: Request, background_tasks: BackgroundTasks):
+    """
+    Endpoint penerima payload webhook event dari WAHA (WhatsApp HTTP API).
+    Mendukung WhatsApp Web Scanner (Multi-Device) gratis tanpa Meta Cloud API.
+    """
+    try:
+        body = await request.json()
+        event_type = body.get("event")
+        payload = body.get("payload", {})
+
+        # Abaikan event selain pesan atau pesan keluar dari bot sendiri
+        if event_type != "message":
+            return {"status": "success", "message": f"Event {event_type} ignored"}
+
+        if payload.get("fromMe", False):
+            return {"status": "success", "message": "Outbound message from bot ignored"}
+
+        # Cegah duplikasi pesan
+        msg_id = payload.get("id")
+        if msg_id:
+            if msg_id in _PROCESSED_MESSAGE_IDS:
+                logger.info(f"[WAHA Webhook] Pesan duplikat diabaikan: {msg_id}")
+                return {"status": "success", "message": "Duplicate message ignored"}
+            _PROCESSED_MESSAGE_IDS.add(msg_id)
+            if len(_PROCESSED_MESSAGE_IDS) > 2000:
+                _PROCESSED_MESSAGE_IDS.pop()
+
+        # Ekstrak nomor/JID pengirim, teks pesan, dan nama session
+        session_name = body.get("session") or settings.waha_session
+        from_id = payload.get("from", "")
+        # Simpan JID lengkap (misal @lid atau @c.us) agar balasan WAHA terkirim tepat sasaran
+        sender_phone = from_id
+        message_text = payload.get("body", "") or ""
+
+        media_id = None
+        if payload.get("hasMedia"):
+            media_obj = payload.get("media") or {}
+            media_id = media_obj.get("url")
+            if not media_id and msg_id:
+                media_id = f"{settings.waha_base_url}/api/{session_name}/chats/{from_id}/messages/{msg_id}/media"
+
+        # Jika pengguna mengirim foto tanpa teks caption, berikan query default agar dianalisa vision
+        if media_id and not message_text.strip():
+            message_text = "Tolong diagnosa gejala penyakit tanaman pada foto ini."
+
+        if sender_phone and (message_text or media_id):
+            logger.info(f"[WAHA Webhook] Pesan dari {sender_phone}: '{message_text}' | Media: {media_id} | Session: {session_name}")
+            background_tasks.add_task(
+                process_incoming_message,
+                phone_number=sender_phone,
+                message_text=message_text,
+                media_id=media_id,
+                session=session_name
+            )
+
+        return {"status": "success", "message": "WAHA event queued for processing"}
+
+    except Exception as e:
+        logger.error(f"Error saat menerima webhook WAHA: {e}")
         return {"status": "error", "message": str(e)}

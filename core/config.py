@@ -13,8 +13,8 @@ class Settings(BaseSettings):
 
     # LLM (Google Gemini)
     gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
-    gemini_model: str = Field(default="gemini-1.5-flash", alias="GEMINI_MODEL")
-    embedding_model: str = Field(default="models/text-embedding-004", alias="EMBEDDING_MODEL")
+    gemini_model: str = Field(default="gemini-3.5-flash", alias="GEMINI_MODEL")
+    embedding_model: str = Field(default="gemini-embedding-001", alias="EMBEDDING_MODEL")
 
     # Supabase (Database, pgvector, Storage)
     supabase_url: str = Field(default="", alias="SUPABASE_URL")
@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     meta_wa_access_token: str = Field(default="", alias="META_WA_ACCESS_TOKEN")
     meta_wa_verify_token: str = Field(default="tanipintar_webhook_verify_token_secret", alias="META_WA_VERIFY_TOKEN")
     meta_graph_version: str = Field(default="v20.0", alias="META_GRAPH_VERSION")
+
+    # WhatsApp Provider (meta atau waha)
+    whatsapp_provider: str = Field(default="waha", alias="WHATSAPP_PROVIDER")
+    waha_base_url: str = Field(default="http://localhost:3000", alias="WAHA_BASE_URL")
+    waha_session: str = Field(default="default", alias="WAHA_SESSION")
 
     # Guardrails & Admin
     confidence_threshold: float = Field(default=0.70, alias="CONFIDENCE_THRESHOLD")

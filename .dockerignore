@@ -1,0 +1,8 @@
+waha_data/
+.venv/
+__pycache__/
+*.pyc
+.git/
+.env
+logs/
+tests/
