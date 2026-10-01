@@ -142,7 +142,141 @@ stateDiagram-v2
 
 ---
 
-## 🌟 3. Rincian Fitur yang Sudah Dibuat & Berfungsi
+## 💻 3. Spesifikasi Teknologi (Technology Stack)
+
+Sistem TaniPintar dibangun menggunakan ekosistem teknologi modern berbasis Python asinkron, LLM multimodal mutakhir, dan infrastruktur cloud yang tangguh:
+
+### 3.1 Ringkasan Komponen Tech Stack
+
+| Layer / Kategori | Komponen / Pustaka | Versi | Peran & Fungsi dalam Sistem |
+| :--- | :--- | :--- | :--- |
+| **Bahasa & Runtime** | **Python** | `3.12` / `3.10+` | Bahasa pemrograman utama untuk backend, AI, dan data pipeline. |
+| **Backend & Web Framework** | **FastAPI** | `>=0.115.0` | Framework web REST API asynchronous berkecepatan tinggi untuk webhook WhatsApp dan portal admin. |
+| **Web Server (ASGI)** | **Uvicorn [standard]** | `>=0.30.0` | ASGI HTTP server untuk menjalankan FastAPI secara asinkron dengan fitur auto-reload. |
+| **Validasi & Konfigurasi** | **Pydantic & Pydantic-Settings** | `>=2.8.0` / `>=2.4.0` | Validasi tipe data ketat, serialisasi skema agronomi, dan pemuatan variabel lingkungan (.env). |
+| **Orkestrator Alur (Agentic)** | **LangGraph** | `>=0.2.20` | Mesin StateGraph untuk navigasi intent percakapan, cyclical state management, dan conditional routing. |
+| **Framework LLM & Abstraksi** | **PydanticAI & LangChain Core** | `>=0.0.18` / `>=0.3.0` | Framework agen cerdas untuk penegakan Structured Output JSON dan penanganan fallback model. |
+| **Model AI Vision & Teks** | **Google Gemini 3.5 Flash** | API 2026 / latest | Model multimodal untuk inspeksi visual foto penyakit tanaman dan penalaran agronomi. |
+| **Model Embedding Teks** | **Google Gemini-Embedding-001** | `output_dim: 768` | Vektorisasi semantik dokumen pengetahuan 11 penyakit dan kueri pertanyaan petani. |
+| **SDK Google GenAI** | **google-genai & langchain-google-genai** | `>=0.1.1` / `>=2.0.0` | Driver resmi Google untuk integrasi LLM dan Text Embedding API. |
+| **Basis Data Relasional & Vektor**| **Supabase Cloud (PostgreSQL 15+)** | Cloud Hosted | Database relasional untuk sesi chat, audit PPL, harga pasar, dan katalog foto dataset. |
+| **Pencarian Semantik (Vector)** | **pgvector** (Postgres Extension) | Enabled | Penyimpanan vektor 768 dimensi dan kalkulasi kemiripan kosinus dengan indeks `IVFFlat`. |
+| **SDK Supabase** | **supabase (Python Client)** | `>=2.6.0` | Client resmi Python untuk query PostgREST, RPC `match_knowledge`, dan interaksi Storage API. |
+| **Penyimpanan Berkas (Storage)** | **Supabase Storage** | Public Buckets | Bucket `crop-symptoms` (foto keluhan petani) dan `disease-references` (292 foto dataset). |
+| **Klien HTTP Asinkron** | **HTTPX** | `>=0.27.0` | Klien HTTP non-blocking untuk unduh media foto WhatsApp, query WeatherAPI, dan Open-Meteo. |
+| **Gateway WhatsApp (Self-Hosted)** | **WAHA (WhatsApp HTTP API)** | Docker `devlikeapro/waha` | Gateway WhatsApp berbasis browser Chromium headless (WebJS engine) tanpa biaya per pesan. |
+| **Gateway WhatsApp (Resmi)** | **Meta WhatsApp Cloud Graph API** | `v20.0` | Alternatif resmi WhatsApp Business Enterprise melalui Webhook Meta Graph API. |
+| **Layanan Cuaca Utama** | **WeatherAPI.com** | REST API | Penyedia data cuaca real-time, presipitasi, kelembapan, dan peluang hujan per kota di Indonesia. |
+| **Layanan Cuaca Fallback** | **Open-Meteo API** | Free REST API | Fallback otomatis tanpa kuota untuk koordinat dan prakiraan cuaca sentra pertanian Indonesia. |
+| **Kontainerisasi & DevOps** | **Docker & Docker Compose** | Docker v24+ | Pembungkus container untuk mengisolasi aplikasi `tanipintar-bot` dan gateway `waha`. |
+
+---
+
+## ⚙️ 4. Kebutuhan Sistem (System Requirements)
+
+Berikut adalah rincian prasyarat teknis perangkat keras (*hardware*), sistem operasi, dependensi paket, dan kunci API eksternal yang dibutuhkan untuk menjalankan sistem TaniPintar:
+
+### 4.1 Kebutuhan Perangkat Keras (Hardware Requirements)
+
+| Komponen Perangkat Keras | Spesifikasi Minimum (Development) | Spesifikasi Rekomendasi (Production VPS) |
+| :--- | :--- | :--- |
+| **Processor (CPU)** | 2 Core CPU (x86_64 atau ARM64) | 4 vCPU Core (2.4 GHz+) |
+| **Memori (RAM)** | 4 GB RAM *(WAHA WebJS membutuhkan minimal 1.5 GB untuk Chromium)* | 8 GB RAM *(Direkomendasikan agar browser headless lancar)* |
+| **Penyimpanan (Disk Storage)**| 20 GB SSD kosong | 40 GB SSD NVMe |
+| **Koneksi Jaringan (Network)** | Akses internet stabil (Unduh/Unggah $\ge$ 10 Mbps) | Bandwidth 100 Mbps+, IP Publik statis, Latensi rendah ke Supabase |
+
+> [!IMPORTANT]
+> **Catatan Alokasi Memori WAHA**: Engine `WEBJS` pada container WAHA menjalankan browser Chromium tanpa kepala (*headless browser*) yang menyimpan sesi WhatsApp Web. Alokasikan setidaknya **2 GB RAM khusus untuk container WAHA** agar tidak terkena *Out of Memory (OOM) Killer*.
+
+---
+
+### 4.2 Kebutuhan Perangkat Lunak & Sistem Operasi (Software & OS Requirements)
+
+1. **Sistem Operasi**:
+   - **Linux**: Ubuntu 22.04 LTS / 24.04 LTS atau Debian 12 (Sangat direkomendasikan untuk produksi).
+   - **Windows**: Windows 10/11 64-bit dengan WSL2 (Windows Subsystem for Linux) atau PowerShell 7+.
+   - **macOS**: macOS Monterey 12+ (Apple Silicon atau Intel).
+2. **Container Engine**:
+   - **Docker Engine**: Versi `24.0.0` atau yang lebih baru.
+   - **Docker Compose**: Versi `v2.20.0` atau yang lebih baru.
+3. **Runtime Python (Jika Menjalankan Bare-Metal / Local Virtualenv)**:
+   - Python versi `3.10`, `3.11`, atau `3.12` (Direkomendasikan `3.12-slim` seperti pada Dockerfile).
+   - Package manager: `uv` (sangat cepat) atau `pip` standar.
+4. **Git**: Versi `2.34+` untuk manajemen versi kode sumber.
+
+---
+
+### 4.3 Kebutuhan Pustaka & Dependensi Python (`requirements.txt`)
+
+Seluruh paket Python berikut didefinisikan dalam [`requirements.txt`](file:///e:/wa%20bot%20longchain/requirements.txt) dan [`pyproject.toml`](file:///e:/wa%20bot%20longchain/pyproject.toml):
+
+```text
+fastapi>=0.115.0              # Framework Web REST API & Webhook Handler
+uvicorn[standard]>=0.30.0     # Server ASGI berperforma tinggi
+pydantic>=2.8.0               # Validasi data & schema parsing
+pydantic-settings>=2.4.0      # Pengelolaan konfigurasi environment terisolasi
+pydantic-ai>=0.0.18           # Abstraksi agen LLM berbasis structured output
+langgraph>=0.2.20             # State machine & routing graph multi-agent
+langchain-core>=0.3.0         # Komponen dasar LangChain
+langchain-google-genai>=2.0.0 # Integrasi model Gemini dalam LangChain
+google-genai>=0.1.1           # SDK resmi Google GenAI API (Gemini 3.5 & Embeddings)
+supabase>=2.6.0               # Client Python Supabase (PostgREST, Auth, Storage)
+httpx>=0.27.0                 # HTTP client asynchronous non-blocking
+python-dotenv>=1.0.1          # Pembaca berkas konfigurasi .env lokal
+python-multipart>=0.0.9       # Parser form data & file upload untuk FastAPI
+```
+
+---
+
+### 4.4 Kebutuhan Akun & API Keys Eksternal (API Credentials)
+
+Aplikasi membutuhkan kredensial pihak ketiga yang harus didefinisikan pada berkas [`.env`](file:///e:/wa%20bot%20longchain/.env):
+
+| Nama Variabel Lingkungan | Sumber Kredensial | Deskripsi & Kegunaan |
+| :--- | :--- | :--- |
+| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/) | Kunci akses model Gemini 3.5 Flash Vision dan Gemini-Embedding-001. |
+| `SUPABASE_URL` | [Supabase Dashboard](https://supabase.com/) | URL endpoint proyek Supabase (contoh: `https://xxxx.supabase.co`). |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Dashboard (`API Settings`) | Service role secret key (`sb_secret_...` atau JWT) untuk bypass RLS pada ingestion dan audit. |
+| `SUPABASE_BUCKET_NAME` | Supabase Storage | Nama bucket penyimpanan foto keluhan petani (default: `crop-symptoms`). |
+| `WEATHER_API_KEY` | [WeatherAPI.com](https://www.weatherapi.com/) | API Key cuaca (Aktif: `76d7a4136a6948e8ac464008250810`). |
+| `WHATSAPP_PROVIDER` | Internal Config | Menentukan provider aktif: `waha` atau `meta` (default: `waha`). |
+| `WAHA_BASE_URL` | Docker Bridge Network | URL endpoint WAHA (contoh: `http://localhost:3000` di lokal, atau `http://waha:3000` di Docker). |
+| `WAHA_SESSION` | WAHA Dashboard | Nama sesi WhatsApp yang digunakan (default: `chatbot` atau `default`). |
+| `ADMIN_API_KEY` | Internal Config | Kunci otentikasi header `X-Admin-Key` untuk portal admin & PPL. |
+| `CONFIDENCE_THRESHOLD` | Internal Config | Ambang batas kepastian diagnosa bot (default: `0.70` atau 70%). |
+| `META_WA_PHONE_NUMBER_ID` | [Meta for Developers](https://developers.facebook.com/) | *(Opsional)* ID Nomor Telepon WhatsApp Cloud API resmi. |
+| `META_WA_ACCESS_TOKEN` | Meta for Developers | *(Opsional)* Token akses Graph API Meta permanent. |
+| `META_WA_VERIFY_TOKEN` | Meta for Developers | *(Opsional)* Token verifikasi handshake webhook (`GET /webhook`). |
+
+---
+
+### 4.5 Kebutuhan Port & Jaringan (Network & Ports)
+
+- **Port `8000` (FastAPI Server)**: Harus dapat diakses oleh WAHA (atau internet/reverse proxy) untuk menerima webhook `POST /webhook` dan menyediakan Swagger docs `/docs`.
+- **Port `3000` (WAHA Server)**: Digunakan untuk membuka dashboard WAHA (`http://localhost:3000/dashboard`) guna melakukan scan QR Code WhatsApp dan memantau status sesi.
+- **Port `443` (Outbound HTTPS)**: Server wajib memiliki izin keluar (*egress*) ke:
+  - `generativelanguage.googleapis.com` (Google Gemini API).
+  - `*.supabase.co` (Supabase Database, REST & Storage).
+  - `api.weatherapi.com` (WeatherAPI.com).
+  - `api.open-meteo.com` & `geocoding-api.open-meteo.com` (Open-Meteo).
+
+---
+
+### 4.6 Prasyarat Database & Storage Supabase
+
+Sebelum aplikasi dijalankan untuk pertama kali, Supabase harus dipersiapkan dengan langkah berikut:
+1. **Aktifkan Ekstensi `vector`**: Melalui SQL Editor dengan perintah `CREATE EXTENSION IF NOT EXISTS vector;`.
+2. **Jalankan Skrip DDL**: Eksekusi seluruh isi berkas [`database/schema.sql`](file:///e:/wa%20bot%20longchain/database/schema.sql) untuk membentuk tabel `knowledge_base`, `disease_reference_images`, `consultation_audits`, `chat_sessions`, `market_prices`, dan fungsi RPC `match_knowledge`.
+3. **Buat Dua Storage Bucket Publik**:
+   - Bucket **`crop-symptoms`**: Akses **Public** (untuk foto keluhan fisik dari petani).
+   - Bucket **`disease-references`**: Akses **Public** (untuk 292 foto dataset resmi pembanding).
+4. **Jalankan Skrip Ingestion**:
+   - `python data/ingest_knowledge.py` (untuk mengindeks 11 penyakit ke pgvector).
+   - `python data/upload_dataset_to_supabase.py` (untuk mengunggah 292 foto dataset).
+
+---
+
+## 🌟 5. Rincian Fitur yang Sudah Dibuat & Berfungsi
 
 Berikut adalah rekapitulasi seluruh modul dan fungsionalitas yang telah diimplementasikan dalam kode:
 
@@ -221,7 +355,7 @@ Berikut adalah rekapitulasi seluruh modul dan fungsionalitas yang telah diimplem
 
 ---
 
-## 📊 4. Skema Basis Data & Konfigurasi Supabase
+## 📊 6. Skema Basis Data & Konfigurasi Supabase
 
 TaniPintar menggunakan PostgreSQL di Supabase dengan ekstensi `vector`. Berikut ringkasan tabel dan fungsinya:
 
@@ -250,7 +384,7 @@ LIMIT match_count;
 
 ---
 
-## 🛡️ 5. Mekanisme Guardrail & Keselamatan Agronomi
+## 🛡️ 7. Mekanisme Guardrail & Keselamatan Agronomi
 
 Pertanian adalah sektor berisiko tinggi. Kesalahan rekomendasi dosis atau diagnosis dapat menyebabkan kegagalan panen. Oleh karena itu, TaniPintar menerapkan prinsip kehati-hatian ketat:
 
@@ -265,7 +399,7 @@ Pertanian adalah sektor berisiko tinggi. Kesalahan rekomendasi dosis atau diagno
 
 ---
 
-## 🧪 6. Hasil Pengujian Kualitas (Testing & QA)
+## 🧪 8. Hasil Pengujian Kualitas (Testing & QA)
 
 Sistem telah dilengkapi dengan automated test suites yang mencakup pengujian unit dan integrasi:
 
@@ -277,13 +411,13 @@ Sistem telah dilengkapi dengan automated test suites yang mencakup pengujian uni
 
 ---
 
-## ⚠️ 7. Apa yang Belum Ditambahkan & Kekurangan Sistem Saat Ini (Gaps & Backlog)
+## ⚠️ 9. Apa yang Belum Ditambahkan & Kekurangan Sistem Saat Ini (Gaps & Backlog)
 
 Meskipun sistem inti (core engine), basis data, kecerdasan buatan, dan gateway WhatsApp sudah berjalan 100%, terdapat beberapa aspek dan fitur lanjutan yang **belum ditambahkan** atau **dapat ditingkatkan** menuju sistem skala produksi komersial (*enterprise-scale*):
 
 ---
 
-### 7.1 Kekurangan Fitur & Kebutuhan Pengembangan Lanjutan
+### 9.1 Kekurangan Fitur & Kebutuhan Pengembangan Lanjutan
 
 #### 1. Belum Ada Tampilan Antarmuka Web Visual untuk Dashboard Admin & PPL (Frontend UI)
 * **Kondisi Saat Ini**: Portal Admin dan PPL saat ini baru tersedia dalam bentuk **REST API** yang diakses melalui Swagger UI (`http://localhost:8000/docs`) atau API Client (Postman/Curl).
@@ -331,7 +465,7 @@ Meskipun sistem inti (core engine), basis data, kecerdasan buatan, dan gateway W
 
 ---
 
-## 🗺️ 8. Rekomendasi Rencana Aksi (Roadmap Pengembangan)
+## 🗺️ 10. Rekomendasi Rencana Aksi (Roadmap Pengembangan)
 
 Berikut adalah tahapan rekomendasi pengembangan berikutnya:
 
@@ -365,7 +499,7 @@ gantt
 
 ---
 
-## 📋 9. Struktur Berkas Proyek Saat Ini
+## 📋 11. Struktur Berkas Proyek Saat Ini
 
 ```text
 e:/wa bot longchain/
@@ -424,7 +558,7 @@ e:/wa bot longchain/
 
 ---
 
-## 🏁 10. Kesimpulan
+## 🏁 12. Kesimpulan
 
 Proyek **TaniPintar Bot** telah berhasil mencapai status operasional fungsional penuh (*production-ready core*). Seluruh fondasi arsitektur—mulai dari RAG semantik berkecepatan tinggi, analisis multimodal foto lapangan, sistem cuaca pertanian cerdas dengan WeatherAPI, proteksi guardrail keselamatan, hingga integrasi WhatsApp live dengan WAHA—telah terpasang dan teruji secara menyeluruh.
 
