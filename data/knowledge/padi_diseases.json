@@ -1,0 +1,62 @@
+[
+  {
+    "commodity": "padi",
+    "disease_name": "Penyakit Blas Daun & Blas Leher (Potong Leher)",
+    "scientific_name": "Pyricularia oryzae (Magnaporthe oryzae)",
+    "pathogen_type": "Jamur",
+    "symptoms": "Bercak berbentuk belah ketupat runcing di kedua ujung dengan pusat kelabu/putih dan tepi cokelat kemerahan pada helaian daun. Pada fase generatif, pangkal malai membusuk cokelat kehitaman dan mudah patah (blas leher), bulir padi hampa dan tegak.",
+    "mechanical_treatment": "Kurangi takaran pupuk Nitrogen (Urea) jika tampak gejala awal. Keringkan petakan sawah secara berkala (intermiten) untuk menurunkan kelembapan mikro kanopi.",
+    "sanitation_treatment": "Bakar sisa jerami tanaman yang terinfeksi setelah panen, jangan membiarkan jerami sakit berserakan di petakan sawah.",
+    "chemical_actives": "Fungisida sistemik berbahan aktif Trisiklazol, Isoprotiolan, Kasugamisin, atau Difenokonazol. Aplikasikan pada saat anakan maksimum dan saat bunting menjelang malai keluar.",
+    "fertilizer_recommendation": "Imbangi pemupukan Urea dengan pupuk Kalium (KCl 100 kg/ha) dan aplikasi Silika (Si) cair untuk memperkuat dinding sel daun dan batang malai.",
+    "prevention": "Gunakan varietas tahan blas seperti Inpari 32, Inpari 42, atau Ciherang secara bergantian, serta perlakuan benih (seed treatment) sebelum semai."
+  },
+  {
+    "commodity": "padi",
+    "disease_name": "Hawar Daun Bakteri (HDB / Kresek)",
+    "scientific_name": "Xanthomonas oryzae pv. oryzae",
+    "pathogen_type": "Bakteri",
+    "symptoms": "Gejala diawali bercak kebasahan pada ujung atau tepi daun, meluas memanjang bergelombang menjadi kuning keputihan dan akhirnya mengering seperti terbakar (kresek). Pada pagi hari berembun tampak eksudat butiran bakteri kekuningan.",
+    "mechanical_treatment": "Pengaturan air secara berselang (intermittent irrigation), jangan menggenangi sawah terus-menerus lebih dari 3-5 cm.",
+    "sanitation_treatment": "Singkirkan gulma rumput teki dan rumput liar di pematang sawah serta saluran irigasi yang menjadi inang perantara bakteri.",
+    "chemical_actives": "Bakterisida berbahan aktif Tembaga Oksiklorida (Copper Oxychloride), Seng Tiazol, atau Oksitetrasiklin. Semprot bila intensitas serangan mencapai ambang batas kendali ekonomi.",
+    "fertilizer_recommendation": "Kurangi dosis Urea hingga 25-30% saat musim hujan dan tambahkan pupuk Kalsium serta pupuk Kalium Klorida (KCl).",
+    "prevention": "Hindari pemotongan pucuk bibit saat tanam pindah karena luka bekas potongan menjadi pintu masuk utama bakteri kresek."
+  },
+  {
+    "commodity": "padi",
+    "disease_name": "Penggerek Batang Padi (Sundep / Beluk)",
+    "scientific_name": "Scirpophaga incertulas",
+    "pathogen_type": "Hama",
+    "symptoms": "Pada fase vegetatif: tunas pucuk menggulung, mati, mengering, dan sangat mudah dicabut dengan pangkal terpotong busuk (sundep). Pada fase generatif: malai keluar berwarna putih pucat hampa dan mudah dicabut, pangkal batang berlubang gerek (beluk).",
+    "mechanical_treatment": "Kumpulkan dan musnahkan kelompok telur penggerek batang yang menempel di ujung helaian daun pada persemaian dan pertanaman muda.",
+    "sanitation_treatment": "Potong tunggul jerami sedekat mungkin dengan permukaan tanah saat panen lalu genangi sawah 1-2 minggu untuk mematikan larva/pupa yang berdiapause.",
+    "chemical_actives": "Insektisida sistemik butiran (granul) berbahan aktif Karbofuran atau Fipronil pada fase vegetatif awal, atau insektisida semprot Klorantraniliprol / Dimehipo bila ditemukan ngengat aktif.",
+    "fertilizer_recommendation": "Aplikasi pupuk NPK berimbang dengan tambahan Silika agar batang padi menjadi lebih keras dan sulit ditembus oleh larva penggerek muda.",
+    "prevention": "Tanam serentak dalam satu hamparan (rentang waktu tanam maksimal 2 minggu) dan pasang lampu perangkap (light trap) di pematang."
+  },
+  {
+    "commodity": "padi",
+    "disease_name": "Penyakit Tungro (Kerdil Kuning)",
+    "scientific_name": "Rice tungro bacilliform virus (RTBV) & Rice tungro spherical virus (RTSV)",
+    "pathogen_type": "Virus",
+    "symptoms": "Tanaman padi kerdil nyata, jumlah anakan sangat sedikit, helaian daun dari pucuk berubah warna menjadi kuning oranye hingga kuning kemerahan mulai dari daun muda ke daun tua. Pembungaan tertunda dan malai tidak keluar sempurna.",
+    "mechanical_treatment": "Cabut dan benamkan ke dalam lumpur tanaman yang menunjukkan gejala tungro pada fase anakan awal agar tidak menular ke rumpun sekitar.",
+    "sanitation_treatment": "Bersihkan singgang (tunas jerami sisa panen sebelumnya) dan gulma famili Poaceae di saluran irigasi yang menjadi reservoir virus.",
+    "chemical_actives": "Kendalikan serangga vektor penularnya yaitu Wereng Daun Hijau (Nephotettix virescens) dengan insektisida berbahan aktif Imidakloprid, Dinotefuran, atau Buprofezin.",
+    "fertilizer_recommendation": "Hindari memaksakan pupuk Urea pada rumpun yang sudah kerdil; aplikasikan pupuk Kalium dan pupuk hayati pelarut fosfat untuk memulihkan perakaran rumpun sekitar.",
+    "prevention": "Tanam varietas tahan tungro seperti Inpari 7, Inpari 8, atau Inpari 9 dan lakukan pergiliran varietas secara terjadwal."
+  },
+  {
+    "commodity": "padi",
+    "disease_name": "Wereng Batang Coklat (WBC / Hopperburn)",
+    "scientific_name": "Nilaparvata lugens",
+    "pathogen_type": "Hama",
+    "symptoms": "Rumpun padi menguning, mengering dari bawah dengan cepat seperti terbakar melingkar di tengah petakan sawah (gejala hopperburn). Pada pangkal rumpun batang padi dipenuhi koloni serangga wereng coklat dan bercak jelaga hitam.",
+    "mechanical_treatment": "Buka kanopi pertanaman dengan sistem tanam jajar legowo (2:1 atau 4:1) untuk mengurangi kelembapan tinggi di pangkal rumpun.",
+    "sanitation_treatment": "Keringkan petakan sawah (irigasi berselang) sampai tanah retak rambut agar kondisi mikroklimat pangkal batang tidak lembap disukai wereng.",
+    "chemical_actives": "Insektisida berbahan aktif Pimetrozin, Triflumuron, Buprofezin (penghambat ganti kulit), atau Tiametoksam. Arahkan semprotan tepat ke pangkal batang padi, bukan tajuk atas.",
+    "fertilizer_recommendation": "Kurangi takaran pupuk N (Urea) karena membuat jaringan batang lunak dan disukai wereng. Gunakan pupuk Kalium (KCl) dan Silika.",
+    "prevention": "Jangan gunakan insektisida piretroid sintetik berdosis tinggi secara membabi buta karena dapat memicu resistensi dan resurjensi ledakan populasi wereng."
+  }
+]

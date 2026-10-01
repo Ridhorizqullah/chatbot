@@ -1,0 +1,74 @@
+[
+  {
+    "commodity": "cabai",
+    "disease_name": "Antraknosa / Patek",
+    "scientific_name": "Colletotrichum capsici",
+    "pathogen_type": "Jamur",
+    "symptoms": "Bercak melingkar cekung berwarna cokelat kehitaman pada buah cabai, terdapat titik-titik spora oranye/hitam konsentris. Buah membusuk kering dan rontok sebelum panen.",
+    "mechanical_treatment": "Petik dan kumpulkan seluruh buah yang terinfeksi ke dalam kantong tertutup, kemudian bakar atau kubur jauh dari lahan (jangan dijadikan kompos).",
+    "sanitation_treatment": "Perlebar jarak tanam untuk sirkulasi udara (min 50x60 cm), bersihkan gulma di sekitar bedengan, perbaiki parit/drainase agar tidak ada air menggenang saat musim hujan.",
+    "chemical_actives": "Fungisida kontak Mankozeb / Propineb (pencegahan) atau fungisida sistemik Difenokonazol / Azoksistrobin (kuratif). Lakukan rotasi golongan bahan aktif setiap 2 minggu.",
+    "fertilizer_recommendation": "Tingkatkan unsur Kalsium (Ca) dan Kalium (K) untuk mempertebal kulit buah cabai, kurangi pupuk Nitrogen (Urea) berlebih saat musim hujan.",
+    "prevention": "Gunakan benih cabai bersertifikat tahan patek, perlakuan benih dengan fungisida perendam benih, dan gunakan mulsa plastik perak hitam."
+  },
+  {
+    "commodity": "cabai",
+    "disease_name": "Penyakit Bulai / Virus Kuning Gemini",
+    "scientific_name": "Pepper yellow leaf curl virus (PepYLCV)",
+    "pathogen_type": "Virus",
+    "symptoms": "Daun cabai mengecil, mengerut/keriting ke atas, dan helaian daun mengalami klorosis (kuning cerah) dengan tulang daun tetap hijau. Tanaman kerdil dan gagal membentuk buah.",
+    "mechanical_treatment": "Eradikasi/cabut tanaman yang terinfeksi sejak dini dan musnahkan agar tidak menjadi sumber penularan vektor kutu kebul.",
+    "sanitation_treatment": "Pasang perangkap kuning berperekat (yellow sticky trap) sebanyak 40-50 buah per hektar untuk mengendalikan populasi vektor kutu kebul.",
+    "chemical_actives": "Virus tidak dapat dimatikan dengan pestisida; kendalikan serangga vektornya (Kutu Kebul / Bemisia tabaci) menggunakan insektisida berbahan aktif Imidakloprid, Asetamiprid, atau Abamektin.",
+    "fertilizer_recommendation": "Semprot pupuk mikro daun yang mengandung Seng (Zn), Boron (B), dan Asam Amino untuk meningkatkan daya tahan fisiologis tanaman muda.",
+    "prevention": "Tanam tanaman pembatas (barrier) seperti jagung 4-5 baris di sekeliling kebun 2-3 minggu sebelum tanam cabai."
+  },
+  {
+    "commodity": "cabai",
+    "disease_name": "Layu Bakteri",
+    "scientific_name": "Ralstonia solanacearum",
+    "pathogen_type": "Bakteri",
+    "symptoms": "Tanaman layu mendadak di siang hari saat terik matahari padahal daun masih berwarna hijau segar. Bila batang bawah dipotong dan dimasukkan ke air jernih, keluar lendir/massa bakteri (bacterial streaming) berwarna putih susu.",
+    "mechanical_treatment": "Cabut tanaman yang layu beserta tanah perakarannya, masukkan ke karung dan musnahkan. Jangan menyiram lewat parit yang melewati tanaman sakit.",
+    "sanitation_treatment": "Taburkan kapur pertanian (Dolomit) 1-2 ton/ha untuk menaikkan pH tanah menjadi netral (pH 6.5-7.0). Gunakan pupuk kompos yang sudah difermentasi matang sempurna.",
+    "chemical_actives": "Aplikasi bakterisida berbahan aktif Streptomisin sulfat, Oksitetrasiklin, atau Tembaga Hidroksida pada lubang tanam di sekitar tanaman sehat sebagai barier pencegahan.",
+    "fertilizer_recommendation": "Hindari pupuk ZA dan Urea berlebih yang membuat suasana tanah masam. Gunakan Kalium Nitrat (KNO3) dan pupuk hayati berbasis Trichoderma/Pseudomonas fluorescens saat olah tanah.",
+    "prevention": "Rotasi tanaman dengan komoditas non-solanaceae (bukan tomat, kentang, terong) minimal selama 1-2 musim tanam."
+  },
+  {
+    "commodity": "cabai",
+    "disease_name": "Layu Fusarium",
+    "scientific_name": "Fusarium oxysporum f. sp. capsici",
+    "pathogen_type": "Jamur",
+    "symptoms": "Daun bagian bawah menguning terlebih dahulu secara bertahap merambat ke atas, tulang daun memucat, tanaman layu perlahan. Jika pangkal batang dibelah membujur, berkas pembuluh xilem berwarna cokelat kemerahan.",
+    "mechanical_treatment": "Cabut tanaman sakit dan buang keluar areal kebun. Jangan gunakan alat pertanian bekas tanaman sakit pada bedengan sehat tanpa dicuci disinfektan.",
+    "sanitation_treatment": "Tinggikan bedengan hingga minimal 40 cm untuk mencegah perakaran terendam air becek saat curah hujan tinggi.",
+    "chemical_actives": "Kocor fungisida berbahan aktif Benomil, Karbendazim, atau Tembaga Oksiklorida di pangkal batang tanaman yang berada di samping tanaman sakit.",
+    "fertilizer_recommendation": "Aplikasi agens hayati Gliocladium sp. atau Trichoderma harzianum yang dicampur pupuk kandang matang saat pemupukan dasar.",
+    "prevention": "Sterilisasi lahan dengan solarisasi tanah atau fumigasi alami, dan gunakan mulsa perak hitam."
+  },
+  {
+    "commodity": "cabai",
+    "disease_name": "Serangan Hama Thrips (Keriting Daun)",
+    "scientific_name": "Thrips parvispinus",
+    "pathogen_type": "Hama",
+    "symptoms": "Permukaan bawah daun bergaris-garis keperakan atau kecokelatan mengilap, tepi daun menggulung ke atas seperti perahu, pucuk daun kaku dan rapuh, serta bunga sering rontok.",
+    "mechanical_treatment": "Semprot dengan air bertekanan tinggi pada pagi hari untuk merontokkan nimfa dan serangga thrips dari bawah permukaan daun.",
+    "sanitation_treatment": "Bersihkan tanaman inang liar seperti babadotan atau gulma berbunga di pematang sawah dan sekeliling bedengan.",
+    "chemical_actives": "Insektisida kontak dan sistemik berbahan aktif Abamektin, Spinetoram, Tiametoksam, atau Fipronil. Semprot pada sore hari saat hama aktif dan arahkan nozel ke bawah permukaan daun.",
+    "fertilizer_recommendation": "Semprot pupuk Silika cair (Si) untuk memperkeras jaringan epidermis daun sehingga tidak mudah ditusuk-hisap oleh stilet thrips.",
+    "prevention": "Gunakan mulsa plastik perak untuk memantulkan sinar ultraviolet yang mengacaukan orientasi terbang serangga thrips."
+  },
+  {
+    "commodity": "cabai",
+    "disease_name": "Bercak Daun Cercospora (Mata Katak)",
+    "scientific_name": "Cercospora capsici",
+    "pathogen_type": "Jamur",
+    "symptoms": "Bercak bulat kecil pada daun dengan pusat berwarna putih kelabu atau pucat dan pinggirannya berwarna cokelat tua berbatas tegas mirip mata katak. Daun yang terserang parah cepat menguning dan rontok massal (defoliasi).",
+    "mechanical_treatment": "Pangkas daun-daun tua bagian bawah yang mulai timbul bercak untuk mengurangi kelembapan di tajuk bawah.",
+    "sanitation_treatment": "Jaga sirkulasi udara dengan jarak tanam yang tidak terlalu rapat, serta hindari penyiraman siram gembor dari atas tajuk tanaman.",
+    "chemical_actives": "Fungisida berbahan aktif Klorotalonil, Mankozeb, Tiofanat-metil, atau Tebukonazol dengan interval semprot 7 hari sekali saat cuaca lembap berawan.",
+    "fertilizer_recommendation": "Pupuk berimbang NPK 16-16-16 ditambah unsur mikro Magnesium (Mg) untuk menjaga klorofil daun tetap prima.",
+    "prevention": "Gunakan varietas tahan dan perlakuan benih air hangat (50°C selama 20 menit) sebelum persemaian."
+  }
+]
