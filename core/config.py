@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     confidence_threshold: float = Field(default=0.70, alias="CONFIDENCE_THRESHOLD")
     admin_api_key: str = Field(default="tanipintar_admin_secret_2026", alias="ADMIN_API_KEY")
 
+    # Weather API (WeatherAPI.com)
+    weather_api_key: str = Field(default="", alias="WEATHER_API_KEY")
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
