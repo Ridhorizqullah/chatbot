@@ -31,7 +31,8 @@ async def process_incoming_message(
     phone_number: str,
     message_text: str,
     media_id: str | None = None,
-    session: str | None = None
+    session: str | None = None,
+    msg_id: str | None = None
 ):
     """
     Background Task: Menjalankan eksekusi LangGraph & mengirimkan balasan WhatsApp.
@@ -39,6 +40,10 @@ async def process_incoming_message(
     """
     try:
         logger.info(f"Memproses pesan dari {phone_number}: '{message_text}' | Media: {media_id} | Session: {session}")
+
+        # 1. Kirim tanda pesan dibaca (centang biru) & tampilkan animasi 'sedang mengetik...' di WA
+        await whatsapp_service.send_seen(to_phone=phone_number, message_id=msg_id, session=session)
+        await whatsapp_service.start_typing(to_phone=phone_number, session=session)
 
         # Jalankan LangGraph StateGraph
         initial_state = {
@@ -61,6 +66,9 @@ async def process_incoming_message(
 
     except Exception as e:
         logger.error(f"Gagal memproses pesan di background task: {e}", exc_info=True)
+    finally:
+        # 2. Hentikan animasi mengetik setelah pemrosesan selesai
+        await whatsapp_service.stop_typing(to_phone=phone_number, session=session)
 
 
 @router.post("")
@@ -171,7 +179,8 @@ async def handle_waha_event(request: Request, background_tasks: BackgroundTasks)
                 phone_number=sender_phone,
                 message_text=message_text,
                 media_id=media_id,
-                session=session_name
+                session=session_name,
+                msg_id=msg_id
             )
 
         return {"status": "success", "message": "WAHA event queued for processing"}

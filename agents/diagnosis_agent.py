@@ -39,10 +39,11 @@ class DiagnosisAgent:
             return []
 
     def _get_candidate_models(self) -> List[str]:
-        candidates = []
-        if self.model_name:
+        # Dahulukan gemini-flash-latest untuk latensi tercepat dan minim antrean 503
+        candidates = ["gemini-flash-latest"]
+        if self.model_name and self.model_name.replace("models/", "") not in candidates:
             candidates.append(self.model_name.replace("models/", ""))
-        for m in ["gemini-3.5-flash", "gemini-flash-latest", "gemini-3.8-flash"]:
+        for m in ["gemini-3.5-flash", "gemini-3.8-flash"]:
             if m not in candidates:
                 candidates.append(m)
         return candidates

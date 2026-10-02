@@ -86,24 +86,34 @@ Panduan Resmi:
 
 Kembalikan jawaban terstruktur dalam skema FertilizerRecommendationResult dengan takaran tepat, aman, dan aplikatif.
 """
-        try:
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config={
-                    "response_mime_type": "application/json",
-                    "response_schema": FertilizerRecommendationResult,
-                    "temperature": 0.2,
-                }
-            )
-            return response.parsed
-        except Exception as e:
-            logger.error(f"Error inferensi pupuk: {e}")
-            return FertilizerRecommendationResult(
-                nama_tanaman=crop,
-                fase_pertumbuhan=fase,
-                rekomendasi_pupuk=rekomendasi,
-                unsur_prioritas=unsur,
-                pestisida_pendamping=pestisida,
-                catatan_aplikasi=aplikasi
-            )
+        candidate_models = ["gemini-flash-latest"]
+        if self.model_name and self.model_name.replace("models/", "") not in candidate_models:
+            candidate_models.append(self.model_name.replace("models/", ""))
+        for m in ["gemini-3.5-flash", "gemini-3.8-flash"]:
+            if m not in candidate_models:
+                candidate_models.append(m)
+
+        for model in candidate_models:
+            try:
+                response = self.client.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                    config={
+                        "response_mime_type": "application/json",
+                        "response_schema": FertilizerRecommendationResult,
+                        "temperature": 0.2,
+                    }
+                )
+                if response.parsed:
+                    return response.parsed
+            except Exception as e:
+                logger.warning(f"Percobaan model pupuk '{model}' gagal: {e}. Mencoba model cadangan...")
+
+        return FertilizerRecommendationResult(
+            nama_tanaman=crop,
+            fase_pertumbuhan=fase,
+            rekomendasi_pupuk=rekomendasi,
+            unsur_prioritas=unsur,
+            pestisida_pendamping=pestisida,
+            catatan_aplikasi=aplikasi
+        )
