@@ -6,3 +6,6 @@ __pycache__/
 .env
 logs/
 tests/
+.agents/
+data/dataset_foto/
+*.log

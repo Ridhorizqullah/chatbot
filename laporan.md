@@ -13,7 +13,7 @@ Sistem menggabungkan pendekatan **Retrieval-Augmented Generation (RAG)** semanti
 - **Status Sistem**: *Fully Functional MVP / Production-Ready Core*.
 - **Cakupan Pengetahuan**: 11 Penyakit & Hama Utama (6 Cabai, 5 Padi) terindeks 768 dimensi di Supabase pgvector.
 - **Koleksi Dataset Visual**: 292 foto referensi terverifikasi yang tersimpan di Supabase Storage (`disease-references`) dan terhubung otomatis pada hasil diagnosa bot.
-- **Konektivitas WhatsApp**: Berjalan secara live menggunakan WAHA engine `WEBJS` terhubung ke nomor bot WhatsApp aktif (`62895418133345`).
+- **Konektivitas WhatsApp**: Berjalan secara live menggunakan WAHA engine `WEBJS` terhubung ke nomor bot WhatsApp operasional (`+62 895-4181-XXXX` / terdaftar pada sesi WAHA).
 - **Kualitas Kode & Pengujian**: 13/13 automated test suites lolos (100% pass).
 
 ---
@@ -47,7 +47,7 @@ flowchart TB
             HistSvc["History Service\n(Audit Riwayat Petani)"]
         end
 
-        Guardrail["Guardrail & Formatter Node\n(Threshold >= 0.70 & Anti-Halusinasi)"]
+        Guardrail["Guardrail dan Formatter Node\n(Threshold &ge; 0.70 &amp; Anti-Halusinasi)"]
         AuditSaver["Audit Saver Node\n(Auto-log Consultation)"]
         AdminAPI["Portal Admin REST API\n/api/v1/admin (CRUD Harga & PPL)"]
     end
@@ -65,16 +65,17 @@ flowchart TB
         GeminiFlash["Google Gemini 3.5 Flash\n(Multimodal Vision & Reasoning)"]
         GeminiEmbed["Google Gemini-Embedding-001\n(768-dim Text Vectorizer)"]
         WeatherAPI["WeatherAPI.com\n(Realtime Weather + Advisory)"]
+        OpenMeteo["Open-Meteo API\n(Fallback Weather Service)"]
     end
 
     %% Flows
     Petani <-->|Kirim/Terima Pesan & Foto| WAHA
     Petani -.->|Alternatif Cloud API| MetaAPI
-    WAHA -->|Webhook POST < 200ms| Webhook
+    WAHA -->|"Webhook POST (&lt; 200ms)"| Webhook
     MetaAPI -->|Webhook POST| Webhook
     Webhook --> RouterNode
     
-    RouterNode -->|Foto| DiagAgent
+    RouterNode -->|Foto (media_id)| DiagAgent
     RouterNode -->|Teks Gejala| DiagAgent
     RouterNode -->|Tanya Pupuk| FertAgent
     RouterNode -->|Tanya Harga| MarketAgent
@@ -87,20 +88,25 @@ flowchart TB
     DiagAgent -->|Upload Foto Gejala| StorageBucket
     DiagAgent <-->|Link Foto Pembanding| RefImages
 
-    WeatherSvc <-->|API Key: 76d7a4136a6948e8ac464008250810| WeatherAPI
+    WeatherSvc <-->|HTTP REST (WEATHER_API_KEY)| WeatherAPI
+    WeatherSvc -.->|Auto Fallback| OpenMeteo
     MarketAgent <-->|Query/Upsert Harga| Prices
     HistSvc <-->|Ambil Histori Petani| Audits
 
-    SubAgents --> Guardrail
+    DiagAgent & FertAgent & MarketAgent & WeatherSvc & HistSvc --> Guardrail
     Guardrail --> AuditSaver
     AuditSaver --> Audits
     AuditSaver --> Sessions
-    AuditSaver -->|Kirim Pesan WhatsApp Balasan| WAHA
-    AuditSaver -.->|Kirim Pesan| MetaAPI
+    Webhook -.->|Async BackgroundTasks Dispatch| WAHA
+    Webhook -.->|Async BackgroundTasks Dispatch| MetaAPI
 
     AdminAPI <-->|Full CRUD| Prices
     AdminAPI <-->|Tindak Lanjut Rujukan PPL| Audits
 ```
+
+> [!NOTE]
+> **Pemisahan Jalur Eksekusi Graf dan Pengiriman Pesan**:
+> Di dalam graf LangGraph (`graph_builder.py`), node `audit_saver` hanya bertugas menulis log audit dan konteks percakapan ke Supabase, kemudian bertransisi langsung ke terminal node `END`. Pengiriman pesan balasan ke WhatsApp petani tidak dilakukan oleh `audit_saver`, melainkan ditangani secara asinkron oleh fungsi background task `process_incoming_message` pada lapisan handler FastAPI (`api/routes/whatsapp.py`). Pendekatan ini memastikan webhook langsung membalas HTTP 200 OK ke gateway WAHA/Meta dalam waktu `< 200ms` guna mencegah *timeout*.
 
 ---
 
@@ -111,34 +117,45 @@ stateDiagram-v2
     [*] --> router: Pesan / Foto Masuk
     
     state router {
-        direction LR
-        Deteksi_Media --> vision: Terdapat Foto (media_id)
-        Deteksi_Teks --> weather: Kata kunci 'cuaca', 'hujan', 'nyemprot'
-        Deteksi_Teks --> price: Kata kunci 'harga', 'pasar', 'gabah'
-        Deteksi_Teks --> fertilizer: Kata kunci 'pupuk', 'dosis', 'kalsium'
-        Deteksi_Teks --> history: Kata kunci 'riwayat', 'rekam jejak'
-        Deteksi_Teks --> greeting: Kata kunci 'halo', 'menu', 'bantuan'
-        Deteksi_Teks --> diagnosis: Gejala Penyakit (Default)
+        [*] --> CekInput
+        CekInput --> CabangMedia: Terdapat media_id (Foto)
+        CekInput --> CabangTeks: Input Berupa Teks
     }
 
-    vision --> formatter: Hasil Analisis Vision & Link Foto Storage
-    diagnosis --> formatter: Hasil Pencarian RAG 11 Penyakit
-    weather --> formatter: Suhu, Hujan, Saran Semprot & Pupuk
-    price --> formatter: Rekap Harga Petani vs Pasar
-    fertilizer --> formatter: Formulasi Dosis & Nutrisi Tanaman
-    history --> formatter: Daftar Riwayat Konsultasi Sebelumnya
-    greeting --> formatter: Menu 6 Layanan & Petunjuk
+    router --> vision: Media Foto (media_id)
+    router --> diagnosis: Kata Kunci Gejala / Default
+    router --> weather: Kata Kunci Cuaca / Semprot
+    router --> price: Kata Kunci Harga Pasar
+    router --> fertilizer: Kata Kunci Pupuk / Dosis
+    router --> history: Kata Kunci Riwayat
+    router --> greeting: Kata Kunci Sapaan / Menu
+
+    vision --> formatter: Hasil Analisis Vision & Media URL
+    diagnosis --> formatter: Hasil RAG 11 Penyakit
+    weather --> formatter: Metrik Cuaca & Saran Semprot
+    price --> formatter: Data Harga Petani vs Konsumen
+    fertilizer --> formatter: Formulasi Dosis Nutrisi
+    history --> formatter: Riwayat 3 Konsultasi Terakhir
+    greeting --> formatter: Teks Panduan 6 Layanan
 
     state formatter {
-        Cek_Komoditas: Verifikasi apakah Cabai atau Padi?
-        Cek_Confidence: Apakah Confidence Score >= 0.70?
-        Beri_Rujukan: Jika < 0.70 -> Tampilkan Pesan Aman Rujukan PPL
-        Beri_Solusi: Jika >= 0.70 -> Format 3 Pilar (Mekanis, Sanitasi, Kimiawi) + Link Foto Referensi
+        [*] --> EvaluasiGuardrail
+        state check_eval <<choice>>
+        EvaluasiGuardrail --> check_eval
+        check_eval --> RujukanPPL: Skor &lt; 0.70 atau Komoditas Luar Lingkup
+        check_eval --> Solusi3Pilar: Skor &ge; 0.70 (Cabai/Padi Valid)
+        RujukanPPL --> FinalisasiFormat: Pesan Fallback Aman Rujukan PPL
+        Solusi3Pilar --> FinalisasiFormat: 3 Pilar (Mekanis, Sanitasi, Kimiawi) + URL Foto
+        FinalisasiFormat --> [*]
     }
 
-    formatter --> audit_saver: Simpan Audit ke Supabase
-    audit_saver --> [*]: Selesai & Kirim ke WhatsApp
+    formatter --> audit_saver: Simpan Rekam Jejak (Supabase)
+    audit_saver --> [*]: LangGraph StateGraph Selesai (END)
 ```
+
+> [!NOTE]
+> **Struktur Topologi LangGraph**:
+> Node `router` (`router_node`) merupakan simpul tunggal (*single node*) yang mengklasifikasikan intensi pengguna ke dalam variabel status `intent`. Fungsi `route_intent(state)` mengevaluasi nilai tersebut melalui *conditional edge* untuk mengarahkan alur ke salah satu dari 7 simpul spesialis (*worker nodes*). Seluruh hasil kemudian dikonsolidasikan oleh `formatter` (`format_and_guardrail_node`) sebelum diteruskan ke `audit_saver` (`audit_saver_node`) dan berakhir di terminal graf `END`.
 
 ---
 
@@ -208,7 +225,7 @@ Berikut adalah rincian prasyarat teknis perangkat keras (*hardware*), sistem ope
 
 ### 4.3 Kebutuhan Pustaka & Dependensi Python (`requirements.txt`)
 
-Seluruh paket Python berikut didefinisikan dalam [`requirements.txt`](file:///e:/wa%20bot%20longchain/requirements.txt) dan [`pyproject.toml`](file:///e:/wa%20bot%20longchain/pyproject.toml):
+Seluruh paket Python berikut didefinisikan dalam `requirements.txt` dan `pyproject.toml`:
 
 ```text
 fastapi>=0.115.0              # Framework Web REST API & Webhook Handler
@@ -230,7 +247,11 @@ python-multipart>=0.0.9       # Parser form data & file upload untuk FastAPI
 
 ### 4.4 Kebutuhan Akun & API Keys Eksternal (API Credentials)
 
-Aplikasi membutuhkan kredensial pihak ketiga yang harus didefinisikan pada berkas [`.env`](file:///e:/wa%20bot%20longchain/.env):
+> [!WARNING]
+> **Protokol Keamanan Kredensial & Variabel Lingkungan**:
+> Jangan pernah mencantumkan atau melakukan *commit* API key rahasia (`GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `WEATHER_API_KEY`, `ADMIN_API_KEY`) ke dalam *version control* (Git) maupun dokumen publik. Seluruh kredensial wajib disimpan secara terisolasi pada berkas `.env` lokal yang telah dilindungi dalam `.gitignore`. Salin templat `.env.example` menjadi `.env` (`cp .env.example .env`) dan gantilah seluruh token bawaan dengan kredensial aman sebelum aplikasi dijalankan.
+
+Aplikasi membutuhkan kredensial pihak ketiga yang harus didefinisikan pada berkas `.env` (disalin dari templat konfigurasi `.env.example`):
 
 | Nama Variabel Lingkungan | Sumber Kredensial | Deskripsi & Kegunaan |
 | :--- | :--- | :--- |
@@ -238,11 +259,11 @@ Aplikasi membutuhkan kredensial pihak ketiga yang harus didefinisikan pada berka
 | `SUPABASE_URL` | [Supabase Dashboard](https://supabase.com/) | URL endpoint proyek Supabase (contoh: `https://xxxx.supabase.co`). |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase Dashboard (`API Settings`) | Service role secret key (`sb_secret_...` atau JWT) untuk bypass RLS pada ingestion dan audit. |
 | `SUPABASE_BUCKET_NAME` | Supabase Storage | Nama bucket penyimpanan foto keluhan petani (default: `crop-symptoms`). |
-| `WEATHER_API_KEY` | [WeatherAPI.com](https://www.weatherapi.com/) | API Key cuaca (Aktif: `76d7a4136a6948e8ac464008250810`). |
+| `WEATHER_API_KEY` | [WeatherAPI.com](https://www.weatherapi.com/) | API Key layanan cuaca (diambil dari variabel lingkungan `.env` / `<WEATHER_API_KEY>`). |
 | `WHATSAPP_PROVIDER` | Internal Config | Menentukan provider aktif: `waha` atau `meta` (default: `waha`). |
 | `WAHA_BASE_URL` | Docker Bridge Network | URL endpoint WAHA (contoh: `http://localhost:3000` di lokal, atau `http://waha:3000` di Docker). |
 | `WAHA_SESSION` | WAHA Dashboard | Nama sesi WhatsApp yang digunakan (default: `chatbot` atau `default`). |
-| `ADMIN_API_KEY` | Internal Config | Kunci otentikasi header `X-Admin-Key` untuk portal admin & PPL. |
+| `ADMIN_API_KEY` | Internal Config | Kunci otentikasi header `X-Admin-Key` untuk portal admin & PPL (wajib dikonfigurasi dengan string acak aman di `.env`). |
 | `CONFIDENCE_THRESHOLD` | Internal Config | Ambang batas kepastian diagnosa bot (default: `0.70` atau 70%). |
 | `META_WA_PHONE_NUMBER_ID` | [Meta for Developers](https://developers.facebook.com/) | *(Opsional)* ID Nomor Telepon WhatsApp Cloud API resmi. |
 | `META_WA_ACCESS_TOKEN` | Meta for Developers | *(Opsional)* Token akses Graph API Meta permanent. |
@@ -264,15 +285,19 @@ Aplikasi membutuhkan kredensial pihak ketiga yang harus didefinisikan pada berka
 
 ### 4.6 Prasyarat Database & Storage Supabase
 
+> [!NOTE]
+> **Prasyarat Ekstensi Database & Izin Akses Storage**:
+> Pastikan ekstensi `vector` (pgvector) telah diaktifkan sebelum menjalankan `data/ingest_knowledge.py`. Selain itu, kedua bucket Supabase Storage (`crop-symptoms` dan `disease-references`) wajib disetel ke mode **Public Bucket** agar tautan visual bukti gejala dan foto referensi dapat ditampilkan langsung di aplikasi WhatsApp petani.
+
 Sebelum aplikasi dijalankan untuk pertama kali, Supabase harus dipersiapkan dengan langkah berikut:
 1. **Aktifkan Ekstensi `vector`**: Melalui SQL Editor dengan perintah `CREATE EXTENSION IF NOT EXISTS vector;`.
-2. **Jalankan Skrip DDL**: Eksekusi seluruh isi berkas [`database/schema.sql`](file:///e:/wa%20bot%20longchain/database/schema.sql) untuk membentuk tabel `knowledge_base`, `disease_reference_images`, `consultation_audits`, `chat_sessions`, `market_prices`, dan fungsi RPC `match_knowledge`.
+2. **Jalankan Skrip DDL**: Eksekusi seluruh isi berkas `database/schema.sql` untuk membentuk tabel `knowledge_base`, `disease_reference_images`, `consultation_audits` (termasuk kolom `followup_notes`), `chat_sessions`, `market_prices`, dan fungsi RPC `match_knowledge`.
 3. **Buat Dua Storage Bucket Publik**:
    - Bucket **`crop-symptoms`**: Akses **Public** (untuk foto keluhan fisik dari petani).
    - Bucket **`disease-references`**: Akses **Public** (untuk 292 foto dataset resmi pembanding).
 4. **Jalankan Skrip Ingestion**:
    - `python data/ingest_knowledge.py` (untuk mengindeks 11 penyakit ke pgvector).
-   - `python data/upload_dataset_to_supabase.py` (untuk mengunggah 292 foto dataset).
+   - `python data/upload_dataset_to_supabase.py` (untuk mengunggah 292 foto dataset dan mengisi metadata ke `disease_reference_images`).
 
 ---
 
@@ -281,25 +306,29 @@ Sebelum aplikasi dijalankan untuk pertama kali, Supabase harus dipersiapkan deng
 Berikut adalah rekapitulasi seluruh modul dan fungsionalitas yang telah diimplementasikan dalam kode:
 
 ### 1. Konsultasi Teks Berbasis RAG Semantik (11 Penyakit Utama)
-- **Komoditas Cabai (6 Penyakit)**:
-  1. *Antraknosa / Patek* (*Colletotrichum capsici*)
-  2. *Penyakit Bulai / Virus Kuning Gemini* (Gemini Virus)
-  3. *Layu Bakteri* (*Ralstonia solanacearum*)
-  4. *Layu Fusarium* (*Fusarium oxysporum*)
-  5. *Serangan Hama Thrips / Keriting Daun* (*Thrips parvispinus*)
-  6. *Bercak Daun Cercospora / Mata Katak* (*Cercospora capsici*)
-- **Komoditas Padi (5 Penyakit/Hama)**:
-  1. *Penyakit Blas Daun & Blas Leher* (*Magnaporthe oryzae*)
-  2. *Hawar Daun Bakteri / Kresek* (*Xanthomonas oryzae*)
-  3. *Penggerek Batang Padi / Sundep & Beluk* (*Scirpophaga innotata*)
-  4. *Penyakit Tungro* (Rice Tungro Bacilliform/Spherical Virus)
-  5. *Wereng Batang Coklat / WBC* (*Nilaparvata lugens*)
-- **Format Output 3 Pilar**: Setiap jawaban diagnosa terstruktur menyajikan:
-  - Identifikasi nama penyakit & nama patogen ilmiah.
-  - Penjelasan gejala klinis.
-  - **Pilar 1: Tindakan Fisik / Mekanis** (pemangkasan, eradikasi tanaman sakit).
-  - **Pilar 2: Sanitasi Lahan & Drainase** (pengaturan kelembapan, bedengan).
-  - **Pilar 3: Rekomendasi Bahan Aktif Kimiawi Terdaftar** (golongan azol, tembaga, mankozeb, klorantraniliprol, dll.) dengan dosis dan cara rotasi untuk mencegah resistensi.
+- **Komoditas Cabai (*Capsicum annuum*) (6 Penyakit/Hama)**:
+  1. *Antraknosa / Patek* (*Colletotrichum capsici* [Syd.] E.J. Butler & Bisby)
+  2. *Penyakit Bulai / Virus Kuning Gemini* (*Pepper yellow leaf curl virus* [PepYLCV] / genus *Begomovirus*)
+  3. *Layu Bakteri* (*Ralstonia solanacearum* [Smith] Yabuuchi et al.)
+  4. *Layu Fusarium* (*Fusarium oxysporum* f. sp. *capsici*)
+  5. *Serangan Hama Thrips / Keriting Daun* (*Thrips parvispinus* Karny)
+  6. *Bercak Daun Cercospora / Mata Katak* (*Cercospora capsici* Heald & F.A. Wolf)
+- **Komoditas Padi (*Oryza sativa*) (5 Penyakit/Hama)**:
+  1. *Penyakit Blas Daun & Blas Leher* (*Magnaporthe oryzae* B.C. Couch / anamorf: *Pyricularia oryzae* Cavara)
+  2. *Hawar Daun Bakteri / Kresek* (*Xanthomonas oryzae* pv. *oryzae* [Ishiyama] Swings et al.)
+  3. *Penggerek Batang Padi / Sundep & Beluk* (*Scirpophaga incertulas* Walker / *Scirpophaga innotata* Walker)
+  4. *Penyakit Tungro* (*Rice tungro bacilliform virus* [RTBV] & *Rice tungro spherical virus* [RTSV])
+  5. *Wereng Batang Coklat / WBC* (*Nilaparvata lugens* Stål)
+- **Format Output 3 Pilar Pengendalian Hama Terpadu (PHT / IPM)**: Setiap jawaban diagnosa terstruktur menyajikan:
+  - Identifikasi nama penyakit & nama patogen ilmiah binomial.
+  - Penjelasan gejala klinis khas di lapangan.
+  - **Pilar 1: Tindakan Fisik / Mekanis** (pemangkasan bagian terinfeksi, eradikasi tanaman sakit, perangkap kuning lekat *yellow sticky trap*, lampu perangkap *light trap*).
+  - **Pilar 2: Sanitasi Lahan & Drainase** (perbaikan guludan/bedengan, pengaturan sirkulasi air, pembersihan gulma inang, pengapuran dolomit).
+  - **Pilar 3: Rekomendasi Bahan Aktif Kimiawi Terdaftar** (hanya menyebutkan nama generik bahan aktif terdaftar seperti *Mankozeb*, *Difenokonazol*, *Trisiklazol*, *Abamektin*, atau *Klorantraniliprol* beserta panduan rotasi golongan cara kerja untuk mencegah resistensi).
+
+> [!TIP]
+> **Kepatuhan Terhadap Regulasi PHT Kementerian Pertanian RI**:
+> TaniPintar Bot secara sistemik memposisikan bahan aktif kimiawi (Pilar 3) sebagai opsi intervensi kuratif terakhir (*last resort*). Bot hanya menyebutkan nama generik bahan aktif terdaftar beserta instruksi rotasi golongan, dan dilarang menyebut merek dagang komersial tertentu guna menjaga objektivitas penyuluhan dan kepatuhan regulasi perlindungan tanaman.
 
 ### 2. Konsultasi Foto Multimodal Vision (Computer Vision)
 - Petani dapat langsung mengirimkan foto gejala daun, buah, atau tanaman sakit ke nomor WhatsApp.
@@ -313,13 +342,19 @@ Berikut adalah rekapitulasi seluruh modul dan fungsionalitas yang telah diimplem
 - Metadata gambar (nama penyakit, komoditas, URL publik, deskripsi visual) tercatat rapi di tabel `disease_reference_images`.
 - Saat diagnosa dihasilkan, bot melakukan pencarian foto pembanding yang relevan dan menyertakan tautan foto resolusi tinggi ke dalam pesan balasan WhatsApp.
 
-### 4. Prakiraan Cuaca Pertanian & Kalender Semprot (Weather Advisory)
-- **Engine Cuaca**: Menggunakan **WeatherAPI.com** (Key: `76d7a4136a6948e8ac464008250810`) dengan geocoding otomatis kota/kabupaten di Indonesia dan parameter bahasa Indonesia.
-- **Auto Fallback**: Apabila koneksi WeatherAPI bermasalah atau kuota bulanan terlampaui, sistem otomatis berpindah (*fallback*) ke **Open-Meteo API** tanpa downtime.
+### 4. Prakiraan Cuaca Pertanian & Kalender Semprot (3-Tier Weather Architecture)
+- **Arsitektur 3 Tingkat Multi-Provider**:
+  1. **Tier 1 (WeatherAPI.com - Utama)**: Mengambil data cuaca real-time, presipitasi, kelembapan, dan peluang hujan per kota/kabupaten di Indonesia (terotentikasi via `WEATHER_API_KEY` pada berkas `.env`) dengan batas waktu respons (*timeout*) 10.0 detik dan lokalisasi bahasa Indonesia.
+  2. **Tier 2 (Open-Meteo & 2-Tier Geocoding Fallback)**: Jika WeatherAPI bermasalah atau kuota bulanan terlampaui, sistem otomatis berpindah ke **Open-Meteo API**. Penentuan koordinat menggunakan sistem 2 tingkat: kamus 12 kota sentra pertanian utama (Karawang, Brebes, Kediri, Malang, Bandung, Garut, Subang, Indramayu, Boyolali, Medan, Makassar, Jakarta), fallback ke Open-Meteo Geocoding API (timeout 8.0 detik), dan default koordinat Karawang (`-6.3060, 107.3019`).
+  3. **Tier 3 (Double-Fallback Estimasi Agronomi Statis)**: Jika kedua penyedia API cuaca eksternal mengalami kendala jaringan bersamaan, sistem secara andal mengeksekusi blok exception lokal yang menyajikan estimasi aman (suhu 29.0°C, kelembapan 78%, peluang hujan 25%, kondisi Cerah Berawan) beserta panduan penyemprotan pagi hari. Pendekatan ini menjamin *zero downtime* bagi pengguna.
 - **Advisory Penyemprotan & Pemupukan**:
   - Peringatan jika peluang hujan tinggi (>50%) atau presipitasi >0.5 mm: Menginstruksikan petani untuk menunda aplikasi pestisida agar bahan aktif tidak terbuang percuma tercuci hujan.
   - Peringatan kelembapan tinggi (>85%): Memberikan panduan penggunaan perekat (*adjuvant*) untuk antisipasi spora jamur antraknosa/blas.
   - Waktu optimal aplikasi: Memberikan saran jam terbaik penyemprotan (06.30 - 09.00 pagi atau sore hari saat stomata terbuka).
+
+> [!TIP]
+> **Redundansi & Failover Otomatis Layanan Cuaca**:
+> Sistem mengadopsi prinsip *graceful degradation*. Ketiadaan atau kegagalan API key eksternal tidak pernah menyebabkan bot *crash* atau menampilkan pesan galat sistem kepada petani; sistem senantiasa menyajikan prakiraan dan saran operasional pertanian yang dapat ditindaklanjuti.
 
 ### 5. Informasi & Fluktuasi Harga Pasar Komoditas
 - Menyediakan acuan harga komoditas utama: Cabai Rawit Merah, Cabai Merah Keriting, Gabah Kering Panen (GKP), dan Beras Medium.
@@ -362,40 +397,141 @@ TaniPintar menggunakan PostgreSQL di Supabase dengan ekstensi `vector`. Berikut 
 | Nama Tabel | Tipe Data Utama | Deskripsi & Fungsi |
 | :--- | :--- | :--- |
 | **`knowledge_base`** | `id`, `commodity`, `disease_name`, `scientific_name`, `pathogen_type`, `symptoms`, `mechanical_treatment`, `sanitation_treatment`, `chemical_actives`, `prevention`, `embedding (vector 768)` | Menyimpan pustaka 11 penyakit tanaman cabai dan padi beserta embedding vektor untuk pencarian semantik RAG. Menggunakan indeks `IVFFlat` (`vector_cosine_ops`). |
-| **`disease_reference_images`**| `id`, `commodity`, `disease_name`, `image_url`, `description`, `created_at` | Katalog 292 tautan foto referensi resmi penyakit dari dataset lapangan yang tersimpan di Supabase Storage. |
-| **`consultation_audits`** | `id (UUID)`, `phone_number`, `crop_type`, `suspected_disease`, `confidence_score`, `is_referred_to_ppl`, `media_url`, `farmer_query`, `bot_recommendation (JSONB)`, `created_at` | Audit trail lengkap seluruh konsultasi petani, bukti foto gejala fisik, serta status rujukan ke petugas PPL lapangan. |
-| **`chat_sessions`** | `phone_number (PK)`, `current_state (JSONB)`, `last_crop_context`, `updated_at` | Menyimpan memori percakapan jangka pendek petani agar bot mengingat komoditas tanaman yang sedang dibahas. |
-| **`market_prices`** | `id`, `price_date`, `commodity`, `province`, `farmgate_price`, `consumer_price`, `unit`, `source`, `notes` | Menyimpan data acuan harga pasar harian komoditas pangan per wilayah. |
+| **`disease_reference_images`**| `id (BIGSERIAL PK)`, `commodity`, `disease_name`, `image_url`, `description`, `created_at` | Katalog 292 tautan foto referensi resmi penyakit dari dataset lapangan yang tersimpan di Supabase Storage bucket `disease-references`. |
+| **`consultation_audits`** | `id (UUID PK)`, `phone_number`, `crop_type`, `suspected_disease`, `confidence_score`, `is_referred_to_ppl`, `followup_notes (TEXT)`, `media_url`, `farmer_query`, `bot_recommendation (JSONB)`, `created_at` | Audit trail lengkap seluruh konsultasi petani, bukti foto gejala fisik, status rujukan PPL, serta catatan tindak lanjut petugas lapangan. |
+| **`chat_sessions`** | `phone_number (PK)`, `current_state (JSONB)`, `last_crop_context`, `updated_at` | Menyimpan memori percakapan jangka pendek petani agar bot mengingat konteks komoditas tanaman yang sedang dibahas. |
+| **`market_prices`** | `id`, `price_date`, `commodity`, `province`, `farmgate_price`, `consumer_price`, `unit`, `source`, `notes` | Menyimpan data acuan harga pasar harian komoditas pangan per wilayah se-Indonesia. |
+
+### Skrip DDL Skema Tambahan (`database/schema.sql`)
+Untuk memastikan seluruh modul terakomodasi secara terpadu, skema mendefinisikan tabel katalog visual dan kolom tindak lanjut audit:
+
+```sql
+-- Tabel Katalog Foto Referensi Resmi Dataset Lapangan
+CREATE TABLE IF NOT EXISTS disease_reference_images (
+    id BIGSERIAL PRIMARY KEY,
+    commodity VARCHAR(50) NOT NULL,
+    disease_name VARCHAR(150) NOT NULL,
+    image_url TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Kolom Tindak Lanjut Petugas PPL pada consultation_audits
+ALTER TABLE consultation_audits ADD COLUMN IF NOT EXISTS followup_notes TEXT;
+```
 
 ### Fungsi RPC PostgreSQL: `match_knowledge`
-Fungsi stored procedure di database untuk menghitung kesamaan kosinus (*Cosine Distance*):
+Fungsi stored procedure di database untuk menghitung kesamaan kosinus (*Cosine Similarity*) secara efisien menggunakan pgvector:
+
 ```sql
-SELECT 
-    kb.id, kb.commodity, kb.disease_name, kb.scientific_name, kb.pathogen_type,
-    kb.symptoms, kb.mechanical_treatment, kb.sanitation_treatment, kb.chemical_actives,
-    kb.prevention,
-    1 - (kb.embedding <=> query_embedding) AS similarity
-FROM knowledge_base kb
-WHERE (filter_commodity IS NULL OR LOWER(kb.commodity) = LOWER(filter_commodity))
-  AND (1 - (kb.embedding <=> query_embedding)) >= match_threshold
-ORDER BY kb.embedding <=> query_embedding
-LIMIT match_count;
+CREATE OR REPLACE FUNCTION match_knowledge (
+    query_embedding VECTOR(768),
+    match_threshold FLOAT DEFAULT 0.65,
+    match_count INT DEFAULT 4,
+    filter_commodity TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+    id BIGINT,
+    commodity VARCHAR(50),
+    disease_name VARCHAR(150),
+    scientific_name VARCHAR(150),
+    pathogen_type VARCHAR(50),
+    symptoms TEXT,
+    mechanical_treatment TEXT,
+    sanitation_treatment TEXT,
+    chemical_actives TEXT,
+    prevention TEXT,
+    similarity FLOAT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        kb.id,
+        kb.commodity,
+        kb.disease_name,
+        kb.scientific_name,
+        kb.pathogen_type,
+        kb.symptoms,
+        kb.mechanical_treatment,
+        kb.sanitation_treatment,
+        kb.chemical_actives,
+        kb.prevention,
+        1 - (kb.embedding <=> query_embedding) AS similarity
+    FROM knowledge_base kb
+    WHERE (filter_commodity IS NULL OR LOWER(kb.commodity) = LOWER(filter_commodity))
+      AND (1 - (kb.embedding <=> query_embedding)) >= match_threshold
+    ORDER BY kb.embedding <=> query_embedding
+    LIMIT match_count;
+END;
+$$;
 ```
 
 ---
 
 ## 🛡️ 7. Mekanisme Guardrail & Keselamatan Agronomi
 
-Pertanian adalah sektor berisiko tinggi. Kesalahan rekomendasi dosis atau diagnosis dapat menyebabkan kegagalan panen. Oleh karena itu, TaniPintar menerapkan prinsip kehati-hatian ketat:
+Pertanian adalah sektor krusial berisiko tinggi. Kesalahan rekomendasi dosis atau kekeliruan diagnosa patogen dapat memicu malpraktik penanganan dan gagal panen. Oleh karena itu, TaniPintar menerapkan prinsip kehati-hatian ketat (*fail-safe agronomic guardrails*):
 
-1. **Ambang Batas Keyakinan (*Confidence Threshold* $\ge 0.70$)**:
-   - Jika hasil inferensi AI memiliki tingkat kepastian di bawah 70% ($< 0.70$), sistem **secara otomatis menolak memberikan diagnosis spekulatif**.
-   - Sistem akan mengaktifkan *Safe Fallback Message*:
-     > *"Gejala pada tanaman Anda belum dapat diidentifikasi dengan tingkat kepastian yang memadai. Untuk menghindari kesalahan penanganan yang merugikan, kami merekomendasikan Anda berkonsultasi langsung dengan Petugas Penyuluh Lapangan (PPL) di BPP setempat atau membawa sampel tanaman ke pos penyuluhan terdekat."*
-2. **Pembatasan Spesialisasi Komoditas (*Crop Restriction Guardrail*)**:
-   - Bot menolak secara halus jika ditanya mengenai tanaman di luar Cabai dan Padi (misalnya sawit, durian, karet) untuk memastikan saran yang diberikan selalu akurat dan berbasis data teruji.
-3. **Pemberian Pilihan Bahan Kimia Sebagai Opsi Terakhir**:
-   - Format jawaban selalu menempatkan tindakan mekanis dan sanitasi di urutan teratas (Pilar 1 dan 2) sebelum merekomendasikan bahan kimiawi (Pilar 3), sejalan dengan prinsip Pengendalian Hama Terpadu (PHT) Kementerian Pertanian RI.
+> [!IMPORTANT]
+> **Prinsip Keselamatan Petani & Larangan Rekomendasi Spekulatif**:
+> Ambang batas keyakinan (*confidence threshold*) $\ge 0.70$ (70%) adalah *hard guardrail*. AI dilarang keras merekomendasikan bahan kimia sintetis jika tingkat kepastian identifikasi berada di bawah ambang batas ini (`confidence < 0.70`). Seluruh kasus ambigu secara wajib diarahkan ke Petugas Penyuluh Lapangan (PPL) setempat demi mencegah malpraktik penanganan dan kerugian ekonomi petani.
+
+### 1. Ambang Batas Keyakinan (*Confidence Threshold* $\ge 0.70$) & Safe Fallback
+Evaluasi ambang batas dilakukan secara ketat pada node `formatter` (`format_and_guardrail_node` di `graph_builder.py`). Jika `confidence < 0.70` atau bendera `rujuk_ke_ppl == True`, sistem **menolak memberikan diagnosis spekulatif** dan menyajikan pesan aman verbatim berikut:
+
+```text
+🌾 *Pemberitahuan Diagnosis TaniPintar*
+
+Mohon maaf Bapak/Ibu Petani, berdasarkan deskripsi gejala yang disampaikan, indikasi penyakit atau hama belum dapat dipastikan secara akurat (Tingkat Keyakinan < 70%).
+
+⚠️ *Demi mencegah kesalahan penanganan atau pemborosan obat*:
+1. Kami menyarankan untuk tidak langsung menyemprotkan pestisida kimiawi sembarangan.
+2. Hubungi atau temui Petugas Penyuluh Lapangan (PPL) / Dinas Pertanian di Balai Penyuluhan Pertanian (BPP) kecamatan setempat untuk inspeksi langsung.
+3. Anda juga dapat mengirimkan *foto bagian tanaman yang sakit* secara lebih dekat dan jelas (daun, batang, atau buah) agar dapat diarsipkan dan diperiksa lebih lanjut.
+```
+
+### 2. Pembatasan Spesialisasi Komoditas (*Crop Restriction Guardrail*)
+Bot secara otomatis mendeteksi komoditas tanaman dari teks kueri maupun inspeksi visual multimodal. Apabila pengguna mengirimkan pertanyaan atau foto tanaman di luar Cabai (*Capsicum annuum*) dan Padi (*Oryza sativa*)—seperti kelapa sawit, apel, karet, durian, atau benda mati—sistem langsung mengaktifkan `is_supported_crop = False`, menetapkan `confidence_score = 0.0`, dan membalas dengan penolakan santun terarah:
+
+> *"Mohon maaf Bapak/Ibu Petani, layanan konsultasi foto TaniPintar saat ini KHUSUS didedikasikan untuk tanaman CABAI dan PADI. Foto yang Anda kirimkan terdeteksi di luar kedua komoditas tersebut. Silakan kirimkan foto daun, buah, atau tanaman cabai atau padi yang mengalami gejala gangguan."*
+
+Kasus di luar komoditas binaan ini tidak disimpan ke dalam tabel audit penyakit agar metrik akurasi agronomi tetap bersih.
+
+### 3. Penerapan 3 Pilar Pengendalian Hama Terpadu (PHT / IPM)
+Sesuai amanat Undang-Undang Perlindungan Tanaman dan pedoman Direktorat Perlindungan Tanaman Pangan & Hortikultura Kementerian Pertanian RI, TaniPintar Bot menerapkan hirarki 3 Pilar PHT:
+1. **Pilar 1 (Mekanis / Fisik)**: Tindakan pembersihan mekanis, pemangkasan daun terinfeksi, pencabutan (*eradikasi*) tanaman sakit, serta pemasangan perangkap (*yellow sticky trap* untuk kutu kebul/thrips atau *light trap* untuk ngengat penggerek batang).
+2. **Pilar 2 (Sanitasi & Kultur Teknis)**: Perbaikan aerasi kebun, pengaturan jarak tanam jajar legowo, drainase guludan/bedengan agar air tidak menggenang, pembersihan gulma inang alternatif, pergiliran varietas tahan, dan perlakuan pembenah tanah (dolomit/pupuk hayati antagonis seperti *Trichoderma* sp.).
+3. **Pilar 3 (Kimiawi Berimbang & Terdaftar)**: Bahan aktif kimia sintetis hanya direkomendasikan bila ambang ekonomi terlampaui (*last resort*). Bot hanya menyebutkan nama generik bahan aktif terdaftar (misal *Mankozeb*, *Difenokonazol*, *Abamektin*, *Klorantraniliprol*) dengan anjuran rotasi golongan cara kerja (MoA), serta tidak menyebutkan merek dagang komersial tertentu.
+
+### 4. Alur Rujukan PPL Siklus Tertutup (*Closed-Loop PPL Referral*)
+Jika bot mendeteksi gejala kritis atau ambigu, sistem tidak melepas petani tanpa solusi, melainkan menghubungkannya ke ekosistem penyuluhan pertanian setempat dalam satu siklus tertutup (*closed-loop workflow*):
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Petani as 🌾 Petani (WhatsApp)
+    participant Bot as 🤖 TaniPintar Bot (FastAPI)
+    participant Guard as 🛡️ Guardrail Engine
+    participant DB as 🗄️ Supabase (consultation_audits)
+    actor PPL as 🧑‍🌾 Petugas PPL (Balai BPP)
+
+    Petani->>Bot: Kirim Foto Daun / Teks Gejala Samar
+    Bot->>Guard: Evaluasi Gejala & Confidence Score
+    Note over Guard: Tingkat Kepastian &lt; 0.70<br/>(Atau Gejala Kritis Membutuhkan Verifikasi)
+    Guard-->>Bot: Picu Safe Fallback Message
+    Bot-->>Petani: ⚠️ Tampilkan Pesan Aman & Rujukan ke PPL BPP
+    Bot->>DB: Catat Audit (is_referred_to_ppl = TRUE, media_url, phone_number)
+    
+    rect rgb(240, 248, 255)
+        Note over PPL,DB: Alur Tindak Lanjut Petugas Penyuluh Lapangan (Closed-Loop)
+        PPL->>DB: GET /api/v1/admin/consultations?referred_only=true
+        DB-->>PPL: Daftar Kasus Rujukan + Tautan Foto Resolusi Tinggi
+        PPL->>Petani: Kunjungan Lapangan / Verifikasi Fisik Tanaman
+        PPL->>DB: PATCH /api/v1/admin/consultations/{id}<br/>(Isi followup_notes & set is_referred_to_ppl = FALSE)
+    end
+```
 
 ---
 
@@ -450,11 +586,11 @@ Meskipun sistem inti (core engine), basis data, kecerdasan buatan, dan gateway W
 * **Kebutuhan**: Kemampuan deteksi bahasa daerah otomatis dan opsi preferensi bahasa pengguna (*Language Selector: Indonesia, Jawa, Sunda*).
 
 #### 6. Ruang Lingkup Komoditas Masih Terbatas (Khusus Cabai & Padi)
-* **Kondisi Saat Ini**: Sistem dibatasi secara ketat (*guardrail*) hanya untuk 2 komoditas (Cabai dan Padi).
-* **Kebutuhan**: Memperluas pustaka pengetahuan (*Knowledge Base*) ke komoditas bernilai tinggi lainnya:
-  - Bawang Merah (Ulat Grayak, Moler/Fusarium).
-  - Jagung (Ulat Grayak Frugiperda/FAW, Bulai).
-  - Kedelai dan Tomat.
+* **Kondisi Saat Ini**: Sistem dibatasi secara ketat (*guardrail*) hanya untuk 2 komoditas utama: Cabai (*Capsicum annuum* L.) dan Padi (*Oryza sativa* L.).
+* **Kebutuhan**: Memperluas pustaka pengetahuan (*Knowledge Base*) ke komoditas bernilai ekonomi tinggi lainnya:
+  - Bawang Merah (*Allium ascalonicum* L.): Penanganan Ulat Grayak Bawang (*Spodoptera exigua* Hübner) dan Moler / Layu Fusarium (*Fusarium oxysporum* f. sp. *cepae*).
+  - Jagung (*Zea mays* L.): Penanganan Ulat Grayak Jagung / FAW (*Spodoptera frugiperda* J.E. Smith) dan Penyakit Bulai Jagung (*Peronosclerospora maydis* [Racib.] C.G. Shaw).
+  - Kedelai (*Glycine max* [L.] Merr.) dan Tomat (*Solanum lycopersicum* L.).
 
 #### 7. Belum Menggunakan Visual Vector Search (Image Embedding)
 * **Kondisi Saat Ini**: Pencarian RAG hanya dilakukan pada **teks** menggunakan `gemini-embedding-001`. Foto fisik didiagnosa langsung oleh model Large Multimodal Model (Gemini Vision).
@@ -471,18 +607,22 @@ Berikut adalah tahapan rekomendasi pengembangan berikutnya:
 
 ```mermaid
 gantt
-    title Roadmap Pengembangan TaniPintar Bot
+    title Peta Jalan Pengembangan (Roadmap) TaniPintar Bot
     dateFormat  YYYY-MM-DD
+    axisFormat  %b %Y
+    
     section Fase 1 (Segera)
-    Pembuatan Web Dashboard PPL (React/Next.js)      :2026-10-05, 20d
-    Scraper Otomatis Panel Harga Bapanas              :2026-10-15, 15d
+    Web Dashboard PPL (React/Next.js)      :active, f1_1, 2026-10-05, 20d
+    Scraper Otomatis Panel Harga Bapanas   :f1_2, 2026-10-15, 15d
+    
     section Fase 2 (Jangka Menengah)
-    Integrasi Voice Note WhatsApp (Whisper/Gemini)   :2026-11-01, 25d
-    Sistem Peringatan Dini (EWS Push Broadcast)      :2026-11-15, 20d
-    Ekspansi Komoditas Bawang Merah & Jagung          :2026-12-01, 30d
+    Integrasi WhatsApp Voice Note (STT)    :f2_1, 2026-11-01, 25d
+    Sistem Peringatan Dini EWS Broadcast   :f2_2, 2026-11-15, 20d
+    Ekspansi Komoditas Bawang & Jagung     :f2_3, 2026-12-01, 30d
+    
     section Fase 3 (Skala Nasional)
-    Multi-Tenancy Kelompok Tani & Koperasi            :2027-01-01, 40d
-    Visual Similarity Search (CLIP / Image Vector)    :2027-01-20, 30d
+    Multi-Tenancy Kelompok Tani / Gapoktan :f3_1, 2027-01-01, 40d
+    Visual Vector Similarity Search (CLIP) :f3_2, 2027-01-20, 30d
 ```
 
 ### Tahap 1: Penguatan Antarmuka & Otomasi Data (1 Bulan ke Depan)
@@ -503,6 +643,7 @@ gantt
 
 ```text
 e:/wa bot longchain/
+├── .agents/                          # Metadata Agen & Skill Framework Antigravity
 ├── agents/                           # PydanticAI Agents & Skema Logika
 │   ├── diagnosis_agent.py           # RAG Text Engine & Gemini 3.5 Flash Vision
 │   ├── fertilizer_agent.py          # Logika Formulasi Dosis & Nutrisi Tanaman
@@ -534,6 +675,7 @@ e:/wa bot longchain/
 │   ├── schema.sql                   # Skrip DDL PostgreSQL + pgvector
 │   └── supabase_client.py           # Supabase Client Singleton
 │
+├── logs/                             # Direktori Output File Log Aplikasi
 ├── services/                         # Integrasi Layanan Eksternal
 │   ├── price_service.py             # Layanan Harga Komoditas Petani vs Pasar
 │   ├── storage_service.py           # Pengunggah Media ke Supabase Storage
@@ -544,16 +686,25 @@ e:/wa bot longchain/
 │   ├── test_api_endpoints.py        # Uji Endpoint Webhook & Admin Portal
 │   └── test_tani_pintar.py          # Uji Komprehensif 6 Fitur MVP & Guardrail
 │
+├── waha_data/                        # Data Sesi Lokal Container WAHA
+├── .dockerignore                     # Aturan Pengecualian Build Docker
 ├── .env                             # Environment Variables Rahasia (API Keys)
-├── .env.example                     # Template Variabel Lingkungan
+├── .env.example                     # Template Variabel Lingkungan Tanpa Rahasia
 ├── .gitignore                       # Proteksi Berkas Git (Abaikan waha_data, logs)
+├── deploy.md                        # Panduan Komprehensif Deployment (Docker/VPS/Cloud)
 ├── docker-compose.yml               # Orkestrasi Docker (tanipintar-bot & waha)
 ├── Dockerfile                       # Container Build Recipe Python 3.12
 ├── graph_builder.py                 # LangGraph StateGraph Kompilasi 6 Layanan
+├── laporan.md                       # Dokumen Laporan Arsitektur Ini
 ├── main.py                          # Uvicorn Server Entrypoint
-├── pyproject.toml                   # Konfigurasi Proyek & Dependensi
+├── ORIGINAL_REQUEST.md              # Spesifikasi Kebutuhan Asli Proyek
+├── PROJECT.md                       # Spesifikasi Fitur, Milestones & Kontrak Proyek
+├── progres.md                       # Rekapitulasi Kemajuan Fitur & Status MVP
+├── pyproject.toml                   # Konfigurasi Proyek & Dependensi Python
+├── README.md                        # Dokumentasi Utama Repositori
 ├── requirements.txt                 # Dependensi PIP
-└── laporan.md                       # Dokumen Laporan Ini
+├── skills-lock.json                 # Metadata Agent Skills Lock
+└── uv.lock                          # Deterministic Dependency Lockfile
 ```
 
 ---

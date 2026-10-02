@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     container_name: tanipintar-bot
     restart: unless-stopped
+    depends_on:
+      - waha
     ports:
       - "8000:8000"
     env_file:
@@ -13,11 +15,14 @@ services:
       - WAHA_BASE_URL=http://waha:3000
     volumes:
       - ./logs:/app/logs
+    networks:
+      - tanipintar-network
 
   waha:
     image: devlikeapro/waha
     container_name: waha
     restart: unless-stopped
+    shm_size: '1gb'
     ports:
       - "3000:3000"
     environment:
@@ -28,6 +33,13 @@ services:
       - WAHA_API_KEY=
       - WHATSAPP_DEFAULT_ENGINE=WEBJS
       - WHATSAPP_FILES_LIFETIME=3600
+      - WHATSAPP_HOOK_URL=http://tanipintar-bot:8000/webhook/waha
+      - WHATSAPP_HOOK_EVENTS=message
     volumes:
       - ./waha_data:/app/.sessions
+    networks:
+      - tanipintar-network
 
+networks:
+  tanipintar-network:
+    driver: bridge
