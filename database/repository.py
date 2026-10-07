@@ -1,6 +1,16 @@
+import uuid
 from typing import Any, Dict, List, Optional
 from database.supabase_client import get_supabase
 from core.logger import logger
+
+
+def _is_valid_uuid(val: Any) -> bool:
+    """Memvalidasi apakah string merupakan format UUID yang valid untuk PostgreSQL."""
+    try:
+        uuid.UUID(str(val))
+        return True
+    except (ValueError, AttributeError, TypeError):
+        return False
 
 
 class ConsultationRepository:
@@ -214,6 +224,10 @@ class ConsultationRepository:
     @staticmethod
     async def update_consultation_audit(audit_id: str, updates: Dict[str, Any]) -> bool:
         """Memperbarui status tindak lanjut audit konsultasi (misal oleh petugas PPL)."""
+        if not _is_valid_uuid(audit_id):
+            logger.warning(f"ID audit konsultasi '{audit_id}' bukan format UUID yang valid.")
+            return False
+
         supabase = get_supabase()
         if not supabase:
             return False
@@ -227,6 +241,10 @@ class ConsultationRepository:
     @staticmethod
     async def delete_consultation_audit(audit_id: str) -> bool:
         """Menghapus data audit konsultasi (misal data spam/pengujian)."""
+        if not _is_valid_uuid(audit_id):
+            logger.warning(f"ID audit konsultasi '{audit_id}' bukan format UUID yang valid.")
+            return False
+
         supabase = get_supabase()
         if not supabase:
             return False

@@ -121,16 +121,143 @@ class TestApiEndpoints(unittest.TestCase):
         self.assertEqual(get_res.status_code, 200)
         self.assertEqual(get_res.json()["status"], "success")
 
-        # 2. Patch consultation follow up
+        # 2. Patch consultation follow up (menggunakan format UUID valid)
+        test_uuid = "00000000-0000-0000-0000-000000000001"
         patch_payload = {"is_referred_to_ppl": False, "followup_notes": "Sudah dikunjungi PPL daerah"}
-        patch_res = self.client.patch("/api/v1/admin/consultations/test-uuid-123", json=patch_payload, headers=headers)
+        patch_res = self.client.patch(f"/api/v1/admin/consultations/{test_uuid}", json=patch_payload, headers=headers)
         self.assertEqual(patch_res.status_code, 200)
         self.assertEqual(patch_res.json()["status"], "success")
 
         # 3. Delete consultation audit
-        del_res = self.client.delete("/api/v1/admin/consultations/test-uuid-123", headers=headers)
+        del_res = self.client.delete(f"/api/v1/admin/consultations/{test_uuid}", headers=headers)
         self.assertEqual(del_res.status_code, 200)
         self.assertEqual(del_res.json()["status"], "success")
+
+    def test_message_deduplicator_lru_ttl(self):
+        """Memverifikasi logika cache de-duplikasi O(1) TTL LRU di core/dedup.py."""
+        import asyncio
+        from core.dedup import MessageDeDuplicator
+
+        async def run_dedup_test():
+            dedup = MessageDeDuplicator(ttl_seconds=2, max_size=3)
+            await dedup.clear()
+
+            # Pesan pertama -> Bukan duplikat (False)
+            self.assertFalse(await dedup.is_duplicate_or_record("msg_1"))
+            # Pesan kedua dengan ID sama -> Duplikat (True)
+            self.assertTrue(await dedup.is_duplicate_or_record("msg_1"))
+
+            # ID berbeda -> Bukan duplikat (False)
+            self.assertFalse(await dedup.is_duplicate_or_record("msg_2"))
+            self.assertFalse(await dedup.is_duplicate_or_record("msg_3"))
+
+            # Kapasitas 3 penuh: jika tambah msg_4, item tertua (msg_1) dieviksi
+            self.assertFalse(await dedup.is_duplicate_or_record("msg_4"))
+
+            # None / string kosong tidak dianggap duplikat
+            self.assertFalse(await dedup.is_duplicate_or_record(""))
+            self.assertFalse(await dedup.is_duplicate_or_record(None))
+
+        asyncio.run(run_dedup_test())
+
+    def test_waha_webhook_events(self):
+        """Memverifikasi penanganan event webhook WAHA (message, group filter, fromMe)."""
+        from services.whatsapp_service import sanitize_chat_id
+
+        old_secret = settings.waha_hmac_secret
+        settings.waha_hmac_secret = ""  # Matikan HMAC sementara untuk menguji logika event
+        try:
+            # 1. Test sanitasi nomor
+            self.assertEqual(sanitize_chat_id("+62 812-3456-7890"), "6281234567890@c.us")
+            self.assertEqual(sanitize_chat_id("081234567890"), "6281234567890@c.us")
+            self.assertEqual(sanitize_chat_id("120363012345@g.us"), "120363012345@g.us")
+
+            # 2. Test pesan masuk personal normal
+            personal_payload = {
+                "event": "message",
+                "session": "default",
+                "payload": {
+                    "id": "waha_msg_test_001",
+                    "from": "6281234567890@c.us",
+                    "fromMe": False,
+                    "body": "halo tanipintar"
+                }
+            }
+            res = self.client.post("/webhook/waha", json=personal_payload)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(res.json()["status"], "success")
+
+            # 3. Test pesan grup diabaikan untuk Anti-Ban
+            group_payload = {
+                "event": "message",
+                "session": "default",
+                "payload": {
+                    "id": "waha_msg_test_002",
+                    "from": "120363099999999999@g.us",
+                    "fromMe": False,
+                    "body": "halo grup"
+                }
+            }
+            res_group = self.client.post("/webhook/waha", json=group_payload)
+            self.assertEqual(res_group.status_code, 200)
+            self.assertIn("Group", res_group.json()["message"])
+
+            # 4. Test pesan outbound (fromMe: true) diabaikan
+            outbound_payload = {
+                "event": "message",
+                "session": "default",
+                "payload": {
+                    "id": "waha_msg_test_003",
+                    "from": "6281234567890@c.us",
+                    "fromMe": True,
+                    "body": "jawaban bot"
+                }
+            }
+            res_outbound = self.client.post("/webhook/waha", json=outbound_payload)
+            self.assertEqual(res_outbound.status_code, 200)
+            self.assertIn("Outbound", res_outbound.json()["message"])
+        finally:
+            settings.waha_hmac_secret = old_secret
+
+    def test_waha_webhook_hmac_verification(self):
+        """Memverifikasi penolakan webhook jika HMAC tidak cocok saat HMAC_SECRET diset."""
+        import hmac
+        import hashlib
+        import json
+
+        old_secret = settings.waha_hmac_secret
+        try:
+            settings.waha_hmac_secret = "secret_kunci_keamanan_test"
+            payload = {
+                "event": "message",
+                "session": "default",
+                "payload": {
+                    "id": "waha_msg_hmac_001",
+                    "from": "6281234567890@c.us",
+                    "fromMe": False,
+                    "body": "tes keamanan"
+                }
+            }
+            body_bytes = json.dumps(payload).encode("utf-8")
+
+            # 1. Tanpa header -> Ditolak (401)
+            res_no_sig = self.client.post("/webhook/waha", content=body_bytes)
+            self.assertEqual(res_no_sig.status_code, 401)
+
+            # 2. Header salah -> Ditolak (401)
+            res_wrong = self.client.post("/webhook/waha", content=body_bytes, headers={"X-Webhook-Hmac": "invalid_signature"})
+            self.assertEqual(res_wrong.status_code, 401)
+
+            # 3. Header benar -> Diterima (200)
+            valid_sig = hmac.new(settings.waha_hmac_secret.encode(), body_bytes, hashlib.sha512).hexdigest()
+            res_valid = self.client.post("/webhook/waha", content=body_bytes, headers={
+                "X-Webhook-Hmac": valid_sig,
+                "X-Webhook-Hmac-Algorithm": "sha512"
+            })
+            self.assertEqual(res_valid.status_code, 200)
+
+        finally:
+            settings.waha_hmac_secret = old_secret
 
 
 if __name__ == "__main__":

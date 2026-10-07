@@ -12,8 +12,11 @@ async def health_check():
         "message": "TaniPintar Bot API is running healthy.",
         "data": {
             "app_env": settings.app_env,
+            "provider": settings.whatsapp_provider,
             "gemini_configured": bool(settings.gemini_api_key),
             "supabase_configured": bool(settings.supabase_url and settings.supabase_service_role_key),
-            "meta_wa_configured": bool(settings.meta_wa_access_token)
+            "waha_configured": bool(settings.waha_base_url),
+            "meta_wa_configured": bool(settings.meta_wa_access_token),
+            "redis_configured": bool(settings.redis_url)
         }
     }

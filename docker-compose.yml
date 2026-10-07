@@ -7,12 +7,14 @@ services:
     restart: unless-stopped
     depends_on:
       - waha
+      - redis
     ports:
       - "8000:8000"
     env_file:
       - .env
     environment:
       - WAHA_BASE_URL=http://waha:3000
+      - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./logs:/app/logs
     networks:
@@ -22,23 +24,63 @@ services:
     image: devlikeapro/waha
     container_name: waha
     restart: unless-stopped
-    shm_size: '1gb'
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     environment:
+      # Engine & Session Management (Sesuai panduan waha skill)
+      - WHATSAPP_DEFAULT_ENGINE=GOWS
+      - WHATSAPP_RESTART_ALL_SESSIONS=True
+      - WAHA_AUTO_START_DELAY_SECONDS=10
+      - WAHA_PRINT_QR=False
+      - WAHA_LOG_LEVEL=info
+      - WAHA_LOG_FORMAT=JSON
+      - TZ=Asia/Jakarta
+
+      # Keamanan API & Dashboard
       - WAHA_DASHBOARD_ENABLED=true
-      - WAHA_DASHBOARD_NO_PASSWORD=True
-      - WAHA_DASHBOARD_PASSWORD=
-      - WAHA_NO_API_KEY=True
-      - WAHA_API_KEY=
-      - WHATSAPP_DEFAULT_ENGINE=WEBJS
-      - WHATSAPP_FILES_LIFETIME=3600
+      - WAHA_DASHBOARD_USERNAME=${WAHA_DASHBOARD_USERNAME:-admin}
+      - WAHA_DASHBOARD_PASSWORD=${WAHA_DASHBOARD_PASSWORD:-}
+      - WAHA_DASHBOARD_NO_PASSWORD=${WAHA_DASHBOARD_NO_PASSWORD:-True}
+      - WAHA_NO_API_KEY=${WAHA_NO_API_KEY:-True}
+      - WAHA_API_KEY=${WAHA_API_KEY:-}
+
+      # Konfigurasi Webhook & Keamanan HMAC
       - WHATSAPP_HOOK_URL=http://tanipintar-bot:8000/webhook/waha
       - WHATSAPP_HOOK_EVENTS=message
+      - WHATSAPP_HOOK_HMAC_KEY=${WAHA_HMAC_SECRET:-}
+      - WHATSAPP_HOOK_RETRIES_POLICY=exponential
+      - WHATSAPP_HOOK_RETRIES_DELAY_SECONDS=2
+      - WHATSAPP_HOOK_RETRIES_ATTEMPTS=5
+
+      # Pengelolaan Media
+      - WHATSAPP_DOWNLOAD_MEDIA=true
+      - WHATSAPP_FILES_LIFETIME=180
+      - WAHA_BASE_URL=http://waha:3000
     volumes:
       - ./waha_data:/app/.sessions
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - tanipintar-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: tanipintar-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - tanipintar-network
+
+volumes:
+  redis_data:
 
 networks:
   tanipintar-network:

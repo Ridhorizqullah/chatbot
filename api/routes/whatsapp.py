@@ -1,12 +1,50 @@
+import json
+import hmac
+import hashlib
+import asyncio
+from typing import Optional, Set
 from fastapi import APIRouter, Request, Query, Response, BackgroundTasks, status
 from core.config import settings
 from core.logger import logger
 from graph_builder import tani_graph_app
 from services.whatsapp_service import WhatsAppService
+from core.dedup import message_deduplicator
 
 router = APIRouter(prefix="/webhook", tags=["WhatsApp Webhook"])
 whatsapp_service = WhatsAppService()
-_PROCESSED_MESSAGE_IDS: set[str] = set()
+
+
+def verify_waha_hmac(raw_body: bytes, headers: dict) -> bool:
+    """
+    Memverifikasi keaslian webhook WAHA menggunakan HMAC SHA-512 / SHA-256
+    sesuai standar keamanan WAHA Plus & Webhook Security.
+    """
+    secret = settings.waha_hmac_secret
+    if not secret:
+        # Jika belum dikonfigurasi di environment, izinkan untuk kemudahan development lokal
+        return True
+
+    # Header signature standar WAHA atau Meta
+    signature = (
+        headers.get("x-webhook-hmac") or
+        headers.get("x-waha-signature") or
+        headers.get("x-hub-signature-256") or
+        ""
+    )
+    if not signature:
+        # Jika WAHA dikonfigurasi tanpa HMAC signature, izinkan tetapi log warning
+        # Ini umum terjadi di WAHA Core (non-Plus) atau konfigurasi webhook tanpa security header
+        logger.warning("[WAHA Security] Header HMAC tidak ada di request. Izinkan untuk kompatibilitas WAHA Core.")
+        return True
+
+    algo = headers.get("x-webhook-hmac-algorithm", "sha512").lower()
+    hash_fn = hashlib.sha512 if "512" in algo else hashlib.sha256
+
+    # Hilangkan prefix 'sha512=' atau 'sha256=' jika ada
+    clean_signature = signature.split("=")[-1].strip()
+    expected_signature = hmac.new(secret.encode("utf-8"), raw_body, hash_fn).hexdigest()
+
+    return hmac.compare_digest(expected_signature, clean_signature)
 
 
 @router.get("")
@@ -30,13 +68,13 @@ async def verify_webhook(
 async def process_incoming_message(
     phone_number: str,
     message_text: str,
-    media_id: str | None = None,
-    session: str | None = None,
-    msg_id: str | None = None
+    media_id: Optional[str] = None,
+    session: Optional[str] = None,
+    msg_id: Optional[str] = None
 ):
     """
     Background Task: Menjalankan eksekusi LangGraph & mengirimkan balasan WhatsApp.
-    Dijalankan di background agar respon HTTP webhook langsung 200 OK (< 200ms) untuk mencegah timeout Meta.
+    Dijalankan di background agar respon HTTP webhook langsung 200 OK (< 200ms) untuk mencegah timeout.
     """
     try:
         logger.info(f"Memproses pesan dari {phone_number}: '{message_text}' | Media: {media_id} | Session: {session}")
@@ -53,8 +91,12 @@ async def process_incoming_message(
             "media_url": None,
             "intent": "diagnosis",
             "crop_context": None,
+            "is_first_interaction": False,
             "diagnosis_result": None,
             "price_result": None,
+            "weather_result": None,
+            "fertilizer_result": None,
+            "history_result": None,
             "final_response": ""
         }
 
@@ -62,6 +104,10 @@ async def process_incoming_message(
         final_reply = result.get("final_response", "")
 
         if final_reply:
+            # Jeda Alami (Human Typing Delay) untuk Anti-Ban Hygiene
+            if settings.waha_human_delay_seconds > 0:
+                await asyncio.sleep(settings.waha_human_delay_seconds)
+
             await whatsapp_service.send_text_message(to_phone=phone_number, text=final_reply, session=session)
 
     except Exception as e:
@@ -97,6 +143,11 @@ async def handle_whatsapp_event(request: Request, background_tasks: BackgroundTa
             return {"status": "success", "message": "Status update ignored"}
 
         msg_obj = messages[0]
+        msg_id = msg_obj.get("id")
+        if msg_id and await message_deduplicator.is_duplicate_or_record(msg_id):
+            logger.info(f"[Meta Webhook] Pesan duplikat diabaikan: {msg_id}")
+            return {"status": "success", "message": "Duplicate message ignored"}
+
         sender_phone = msg_obj.get("from")
         msg_type = msg_obj.get("type")
 
@@ -130,37 +181,53 @@ async def handle_whatsapp_event(request: Request, background_tasks: BackgroundTa
 async def handle_waha_event(request: Request, background_tasks: BackgroundTasks):
     """
     Endpoint penerima payload webhook event dari WAHA (WhatsApp HTTP API).
-    Mendukung WhatsApp Web Scanner (Multi-Device) gratis tanpa Meta Cloud API.
+    Dilengkapi verifikasi HMAC, filter Anti-Ban grup/broadcast, dan background processing.
     """
     try:
-        body = await request.json()
+        raw_body = await request.body()
+
+        # 1. Verifikasi Keamanan HMAC Webhook
+        if not verify_waha_hmac(raw_body, dict(request.headers)):
+            return Response(
+                content=json.dumps({"status": "error", "message": "Invalid HMAC signature"}),
+                media_type="application/json",
+                status_code=status.HTTP_401_UNAUTHORIZED
+            )
+
+        body = json.loads(raw_body.decode("utf-8")) if raw_body else {}
         event_type = body.get("event")
         payload = body.get("payload", {})
 
-        # Abaikan event selain pesan atau pesan keluar dari bot sendiri
+        # 2. Abaikan event selain pesan masuk
         if event_type != "message":
             return {"status": "success", "message": f"Event {event_type} ignored"}
 
+        # 3. Abaikan pesan keluar dari bot sendiri (Anti-Loop)
         if payload.get("fromMe", False):
             return {"status": "success", "message": "Outbound message from bot ignored"}
 
-        # Cegah duplikasi pesan
-        msg_id = payload.get("id")
-        if msg_id:
-            if msg_id in _PROCESSED_MESSAGE_IDS:
-                logger.info(f"[WAHA Webhook] Pesan duplikat diabaikan: {msg_id}")
-                return {"status": "success", "message": "Duplicate message ignored"}
-            _PROCESSED_MESSAGE_IDS.add(msg_id)
-            if len(_PROCESSED_MESSAGE_IDS) > 2000:
-                _PROCESSED_MESSAGE_IDS.pop()
-
-        # Ekstrak nomor/JID pengirim, teks pesan, dan nama session
-        session_name = body.get("session") or settings.waha_session
         from_id = payload.get("from", "")
-        # Simpan JID lengkap (misal @lid atau @c.us) agar balasan WAHA terkirim tepat sasaran
+
+        # 4. Anti-Ban Filter: Abaikan pesan grup (@g.us), channel (@newsletter), dan broadcast status
+        if from_id.endswith("@g.us"):
+            logger.info(f"[WAHA Webhook] Pesan grup diabaikan untuk menjaga keamanan nomor: {from_id}")
+            return {"status": "success", "message": "Group messages ignored"}
+
+        if from_id.endswith("@newsletter") or from_id == "status@broadcast":
+            return {"status": "success", "message": "Channel or status broadcast ignored"}
+
+        # 5. De-duplikasi pesan (Mencegah double processing akibat retry WAHA)
+        msg_id = payload.get("id")
+        if msg_id and await message_deduplicator.is_duplicate_or_record(msg_id):
+            logger.info(f"[WAHA Webhook] Pesan duplikat diabaikan: {msg_id}")
+            return {"status": "success", "message": "Duplicate message ignored"}
+
+        # 6. Ekstrak Pengirim, Teks, dan Sesi
+        session_name = body.get("session") or settings.waha_session
         sender_phone = from_id
         message_text = payload.get("body", "") or ""
 
+        # Deteksi lampiran media
         media_id = None
         if payload.get("hasMedia"):
             media_obj = payload.get("media") or {}
@@ -168,7 +235,7 @@ async def handle_waha_event(request: Request, background_tasks: BackgroundTasks)
             if not media_id and msg_id:
                 media_id = f"{settings.waha_base_url}/api/{session_name}/chats/{from_id}/messages/{msg_id}/media"
 
-        # Jika pengguna mengirim foto tanpa teks caption, berikan query default agar dianalisa vision
+        # Query default untuk foto tanpa caption teks
         if media_id and not message_text.strip():
             message_text = "Tolong diagnosa gejala penyakit tanaman pada foto ini."
 
@@ -186,5 +253,5 @@ async def handle_waha_event(request: Request, background_tasks: BackgroundTasks)
         return {"status": "success", "message": "WAHA event queued for processing"}
 
     except Exception as e:
-        logger.error(f"Error saat menerima webhook WAHA: {e}")
+        logger.error(f"Error saat menerima webhook WAHA: {e}", exc_info=True)
         return {"status": "error", "message": str(e)}

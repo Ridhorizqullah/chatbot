@@ -32,6 +32,7 @@ class TaniState(TypedDict):
     weather_result: Optional[Dict[str, Any]]
     fertilizer_result: Optional[Dict[str, Any]]
     history_result: Optional[List[Dict[str, Any]]]
+    is_first_interaction: Optional[bool]
     final_response: str
 
 
@@ -49,12 +50,27 @@ weather_service = WeatherService()
 
 async def router_node(state: TaniState) -> Dict[str, Any]:
     """Mendeteksi 6 intensi layanan TaniPintar berdasarkan teks atau media gambar."""
+    phone = state.get("phone_number", "")
     msg = state.get("user_message", "").lower().strip()
     media_id = state.get("media_id")
 
-    # 1. Fitur 2: Konsultasi Foto (Multimodal Vision)
+    # Bersihkan karakter tanda baca untuk pencocokan kata yang fleksibel (misal "halo!", "pagi..", "p")
+    clean_msg = re.sub(r"[^\w\s]", "", msg).strip()
+
+    # 1. Cek apakah ini pengguna baru pertama kali chat (belum ada sesi / belum pernah disambut)
+    is_first_time = False
+    if phone:
+        try:
+            session = await ConsultationRepository.get_session(phone)
+            if not session or not session.get("current_state", {}).get("has_greeted"):
+                is_first_time = True
+        except Exception as e:
+            logger.debug(f"Gagal cek status sesi pertama kali: {e}")
+            is_first_time = False
+
+    # 2. Fitur 2: Konsultasi Foto (Multimodal Vision)
     if media_id:
-        return {"intent": "vision_diagnosis"}
+        return {"intent": "vision_diagnosis", "is_first_interaction": is_first_time}
 
     # Deteksi konteks tanaman (Cabai vs Padi)
     detected_crop = None
@@ -63,35 +79,65 @@ async def router_node(state: TaniState) -> Dict[str, Any]:
     elif "padi" in msg or "gabah" in msg or "sawah" in msg or "beras" in msg:
         detected_crop = "padi"
 
-    # 2. Fitur 4: Riwayat Konsultasi
+    # 3. Fitur 4: Riwayat Konsultasi
     history_keywords = ["riwayat", "histori", "rekam jejak", "konsultasi lalu", "konsultasi saya", "riwayat penyakit"]
     if any(k in msg for k in history_keywords):
-        return {"intent": "history", "crop_context": detected_crop}
+        return {"intent": "history", "crop_context": detected_crop, "is_first_interaction": is_first_time}
 
-    # 3. Fitur 5: Prediksi Cuaca Pertanian
+    # 4. Fitur 5: Prediksi Cuaca Pertanian
     weather_keywords = ["cuaca", "hujan", "mendung", "suhu", "angin", "prakiraan", "kapan nyemprot", "kelembapan", "gerimis"]
     if any(k in msg for k in weather_keywords):
-        return {"intent": "weather", "crop_context": detected_crop}
+        return {"intent": "weather", "crop_context": detected_crop, "is_first_interaction": is_first_time}
 
-    # 4. Fitur 3: Harga Pasar Padi dan Cabai (Otomatis & Admin)
+    # 5. Fitur 3: Harga Pasar Padi dan Cabai (Otomatis & Admin)
     price_keywords = ["harga", "pasar", "sekilo", "per kilo", "jual", "tengkulak", "gkp", "gabah", "beras", "biaya"]
     if any(k in msg for k in price_keywords):
-        return {"intent": "market_price", "crop_context": detected_crop}
+        return {"intent": "market_price", "crop_context": detected_crop, "is_first_interaction": is_first_time}
 
-    # 5. Fitur 6: Rekomendasi Pestisida & Pupuk Spesifik
+    # 6. Fitur 6: Rekomendasi Pestisida & Pupuk Spesifik
     fertilizer_keywords = ["pupuk", "pemupukan", "dosis", "urea", "npk", "sp-36", "kcl", "kno3", "kalsium", "silika", "obat", "pestisida", "fungisida", "insektisida", "bakterisida", "semprot apa"]
     if any(k in msg for k in fertilizer_keywords):
-        return {"intent": "fertilizer", "crop_context": detected_crop}
+        return {"intent": "fertilizer", "crop_context": detected_crop, "is_first_interaction": is_first_time}
 
-    # 6. Sapaan Umum & Bantuan
-    greeting_keywords = ["halo", "assalamualaikum", "selamat pagi", "selamat siang", "selamat sore", "hai", "menu", "bantuan", "bisa apa", "fitur"]
-    if any(msg == k or msg.startswith(f"{k} ") for k in greeting_keywords):
-        return {"intent": "greeting", "crop_context": detected_crop}
+    # 7. Sapaan Umum, Bantuan & Pembuka Percakapan Fleksibel
+    greeting_triggers = [
+        "halo", "hallo", "hello", "hai", "hi", "hey", "hei",
+        "assalamualaikum", "assalamu'alaikum", "samlikum", "askum", "mikum",
+        "p", "ping", "tes", "test",
+        "pagi", "siang", "sore", "malam",
+        "selamat pagi", "selamat siang", "selamat sore", "selamat malam",
+        "permisi", "punten", "kulonuwun",
+        "bisa bantu", "bisa tanya", "mau tanya", "tanya", "nanya",
+        "bantuan", "help", "menu", "fitur", "info", "informasi",
+        "mulai", "start", "bot", "tanipintar", "siapa kamu", "apa ini"
+    ]
 
-    # 7. Fitur 1: Konsultasi Teks 11 Penyakit (Default)
+    is_greeting_match = (
+        clean_msg in greeting_triggers or
+        any(clean_msg.startswith(f"{k} ") or clean_msg == k for k in greeting_triggers) or
+        any(k in clean_msg for k in ["bisa bantu", "mau tanya", "selamat pagi", "selamat siang", "selamat sore", "selamat malam"])
+    )
+
+    # Kata kunci indikasi penyakit tanaman spesifik
+    symptom_keywords = [
+        "bercak", "busuk", "kuning", "keriting", "layu", "rontok", "hama",
+        "ulat", "wereng", "kutu", "jamur", "bakteri", "daun", "buah", "batang",
+        "akar", "malai", "bulir", "kering", "bolong", "gosong", "bintik"
+    ]
+    has_symptom_word = any(s in clean_msg for s in symptom_keywords)
+
+    # Trigger Menu Selamat Datang jika:
+    # a) Pesan mengandung sapaan/pembuka
+    # b) Pengguna baru pertama kali chat dan pesannya singkat (<= 4 kata) tanpa menyebut penyakit
+    # c) Pesan sangat pendek (<= 3 karakter, misal "p", "?") tanpa konteks penyakit
+    if is_greeting_match or (is_first_time and not has_symptom_word and len(clean_msg.split()) <= 4) or (len(clean_msg) <= 3 and not has_symptom_word):
+        return {"intent": "greeting", "crop_context": detected_crop, "is_first_interaction": is_first_time}
+
+    # 8. Fitur 1: Konsultasi Teks 11 Penyakit (Default keluhan tanaman)
     return {
         "intent": "diagnosis",
-        "crop_context": detected_crop
+        "crop_context": detected_crop,
+        "is_first_interaction": is_first_time
     }
 
 
@@ -156,11 +202,53 @@ async def history_node(state: TaniState) -> Dict[str, Any]:
 async def weather_node(state: TaniState) -> Dict[str, Any]:
     """Fitur 5: Mengambil data prakiraan cuaca Open-Meteo & advisory semprot."""
     query = state.get("user_message", "")
-    # Ekstraksi nama daerah sederhana jika ada
-    words = [w for w in query.replace("?", "").split() if len(w) > 3]
-    loc_guess = words[-1] if words else "Karawang"
-    if loc_guess.lower() in ["cuaca", "hujan", "hari", "besok", "lusa", "sawah"]:
-        loc_guess = "Karawang"
+
+    # Alias & normalisasi nama kota populer (singkatan/sebutan lokal)
+    CITY_ALIASES = {
+        "jogja": "Yogyakarta",
+        "yogya": "Yogyakarta",
+        "jkt": "Jakarta",
+        "sby": "Surabaya",
+        "bdg": "Bandung",
+        "mks": "Makassar",
+        "sby": "Surabaya",
+        "solo": "Surakarta",
+        "jog": "Yogyakarta",
+    }
+
+    # Kata-kata yang BUKAN nama lokasi
+    NON_LOCATION_WORDS = {
+        "cuaca", "hujan", "hari", "besok", "lusa", "sawah", "semprot",
+        "penyemprotan", "aman", "bagaimana", "kondisi", "prakiraan",
+        "saya", "untuk", "kapan", "bisa", "boleh", "apakah", "ini",
+        "petani", "tanaman", "kebun", "lahan", "padi", "cabai",
+        "sekarang", "terkini", "update", "info", "tolong", "mohon",
+        "gimana", "gimana", "dong", "yuk", "mau", "dari", "akan"
+    }
+
+    loc_guess = "Karawang"  # default sentra pertanian
+    query_lower = query.lower().replace("?", "").replace("!", "").replace(",", "").replace(".", "")
+
+    # 1. Cek alias dulu (jogja, solo, dll)
+    for alias, city in CITY_ALIASES.items():
+        if alias in query_lower.split():
+            loc_guess = city
+            break
+    else:
+        # 2. Ambil kandidat kata dengan panjang > 3 yang bukan stop-word
+        candidates = [
+            w.capitalize()
+            for w in query_lower.split()
+            if len(w) > 3 and w not in NON_LOCATION_WORDS
+        ]
+        if candidates:
+            # Prioritaskan kata yang diawali huruf kapital di query asli (nama tempat)
+            original_words = query.replace("?", "").split()
+            capitalized = [w for w in original_words if w[0].isupper() and len(w) > 3]
+            if capitalized:
+                loc_guess = capitalized[0]
+            else:
+                loc_guess = candidates[0]  # ambil kandidat pertama (bukan terakhir)
 
     result = await weather_service.get_weather_forecast(loc_guess)
     return {"weather_result": result.model_dump()}
@@ -200,6 +288,16 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
     if state.get("final_response"):
         return {}
 
+    # Sisipkan banner selamat datang jika ini adalah percakapan pertama kali pengguna (bukan greeting)
+    is_first = state.get("is_first_interaction", False)
+    welcome_banner = ""
+    if is_first and state.get("intent") != "greeting":
+        welcome_banner = (
+            "🌾 *Selamat Datang di TaniPintar Bot!*\n"
+            "_Asisten Sahabat Petani Cerdas untuk Perlindungan Tanaman Cabai & Padi._\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        )
+
     # 1. Output Fitur 4: Riwayat Konsultasi
     hist = state.get("history_result")
     if hist is not None:
@@ -209,7 +307,7 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
                 "Belum ditemukan riwayat konsultasi untuk nomor WhatsApp ini.\n"
                 "Silakan konsultasikan gejala tanaman Cabai atau Padi Anda melalui teks atau foto!"
             )
-            return {"final_response": msg}
+            return {"final_response": welcome_banner + msg}
 
         lines = ["📋 *REKAM JEJAK KONSULTASI ANDA:*\n"]
         for idx, item in enumerate(hist, 1):
@@ -224,7 +322,7 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
                 f"   📅 Tanggal: {date_str} | Status: {status_ppl}\n"
             )
         lines.append("ℹ️ _Ketik pertanyaan baru untuk melakukan konsultasi tanaman lanjutan._")
-        return {"final_response": "\n".join(lines)}
+        return {"final_response": welcome_banner + "\n".join(lines)}
 
     # 2. Output Fitur 5: Prediksi Cuaca
     weather = state.get("weather_result")
@@ -238,7 +336,7 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
             f"🚜 *Saran Aplikasi Penyemprotan:*\n{weather.get('advisory_penyemprotan')}\n\n"
             f"🌱 *Saran Pemupukan:*\n{weather.get('advisory_pemupukan')}"
         )
-        return {"final_response": msg}
+        return {"final_response": welcome_banner + msg}
 
     # 3. Output Fitur 6: Rekomendasi Pupuk & Obat Spesifik
     fert = state.get("fertilizer_result")
@@ -253,7 +351,7 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
             f"{pest}\n\n"
             f"⚙️ *Petunjuk Waktu & Cara Aplikasi:*\n{fert.get('catatan_aplikasi')}"
         )
-        return {"final_response": msg}
+        return {"final_response": welcome_banner + msg}
 
     # 4. Output Fitur 3: Harga Pasar
     price = state.get("price_result")
@@ -273,7 +371,7 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
             f"ℹ️ *Sumber:* {price.get('sumber', '')}\n"
             f"📝 *Catatan:* {price.get('catatan_pasar', '')}"
         )
-        return {"final_response": msg}
+        return {"final_response": welcome_banner + msg}
 
     # 5. Output Fitur 1 & 2: Diagnosis Teks atau Foto
     diag = state.get("diagnosis_result")
@@ -288,7 +386,7 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
         # GUARDRAIL AMBANG BATAS KEYAKINAN (< 0.70)
         if confidence < settings.confidence_threshold or rujuk_ppl:
             logger.info(f"Guardrail aktif: Confidence {confidence} < {settings.confidence_threshold}")
-            return {"final_response": SAFE_FALLBACK_MESSAGE}
+            return {"final_response": welcome_banner + SAFE_FALLBACK_MESSAGE}
 
         langkah = diag.get("langkah_penanganan", {})
         photo_info = "\n📸 _(Analisis Berdasarkan Bukti Foto Lapangan)_" if state.get("media_url") else ""
@@ -310,9 +408,9 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
             f"{ref_section}\n\n"
             f"_Apabila gejala tidak membaik dalam 3-5 hari, segera hubungi PPL setempat._"
         )
-        return {"final_response": msg}
+        return {"final_response": welcome_banner + msg}
 
-    return {"final_response": SAFE_FALLBACK_MESSAGE}
+    return {"final_response": welcome_banner + SAFE_FALLBACK_MESSAGE}
 
 
 async def audit_saver_node(state: TaniState) -> Dict[str, Any]:
@@ -332,10 +430,10 @@ async def audit_saver_node(state: TaniState) -> Dict[str, Any]:
             bot_recommendation=diag
         )
 
-    # Simpan status sesi percakapan
+    # Simpan status sesi percakapan & tandai telah disambut
     await ConsultationRepository.upsert_session(
         phone_number=phone,
-        current_state={"last_intent": state.get("intent")},
+        current_state={"last_intent": state.get("intent"), "has_greeted": True},
         last_crop_context=state.get("crop_context")
     )
     return {}

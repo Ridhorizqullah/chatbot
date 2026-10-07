@@ -21,7 +21,26 @@ class WeatherService:
         "boyolali": (-7.5361, 110.5947),
         "medan": (3.5952, 98.6722),
         "makassar": (-5.1477, 119.4327),
-        "jakarta": (-6.2088, 106.8456)
+        "jakarta": (-6.2088, 106.8456),
+        # Sentra pertanian Jawa Tengah & DIY
+        "yogyakarta": (-7.7971, 110.3688),
+        "jogja": (-7.7971, 110.3688),
+        "semarang": (-6.9667, 110.4167),
+        "magelang": (-7.4797, 110.2177),
+        "klaten": (-7.7059, 110.6058),
+        "temanggung": (-7.3217, 110.1750),
+        "purwokerto": (-7.4211, 109.2366),
+        "banyumas": (-7.5143, 109.2931),
+        "wonosobo": (-7.3617, 109.9055),
+        "surakarta": (-7.5755, 110.8243),
+        "solo": (-7.5755, 110.8243),
+        # Jawa Timur
+        "surabaya": (-7.2575, 112.7521),
+        "jember": (-8.1845, 113.6681),
+        "banyuwangi": (-8.2193, 114.3691),
+        "blitar": (-8.0981, 112.1620),
+        "tulungagung": (-8.0653, 111.9048),
+        "lumajang": (-8.1345, 113.2237),
     }
 
     def _build_advisories(self, precip: float, rain_prob: int, humidity: int) -> Tuple[str, str]:
@@ -64,9 +83,12 @@ class WeatherService:
         if not api_key:
             return None
 
-        # Bersihkan nama lokasi
-        loc_clean = location_query.replace("?", "").replace("di", "").strip() or "Karawang"
-        url = f"https://api.weatherapi.com/v1/forecast.json?key={api_key}&q={loc_clean}&days=1&lang=id"
+        # Bersihkan nama lokasi & tambah konteks 'Indonesia' untuk disambiguasi WeatherAPI
+        loc_clean = location_query.replace("?", "").replace("di ", "").strip() or "Karawang"
+        # Tambah ', Indonesia' jika belum ada untuk menghindari match kota luar negeri atau
+        # kota kecil dengan nama sama di provinsi berbeda (misal: 'Jogja Lama, Sulawesi Barat')
+        query_param = loc_clean if "indonesia" in loc_clean.lower() else f"{loc_clean}, Indonesia"
+        url = f"https://api.weatherapi.com/v1/forecast.json?key={api_key}&q={query_param}&days=1&lang=id"
 
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:

@@ -31,6 +31,14 @@ class Settings(BaseSettings):
     whatsapp_provider: str = Field(default="waha", alias="WHATSAPP_PROVIDER")
     waha_base_url: str = Field(default="http://localhost:3000", alias="WAHA_BASE_URL")
     waha_session: str = Field(default="default", alias="WAHA_SESSION")
+    waha_api_key: str = Field(default="", alias="WAHA_API_KEY")
+    waha_hmac_secret: str = Field(default="", alias="WAHA_HMAC_SECRET")
+    waha_dashboard_username: str = Field(default="admin", alias="WAHA_DASHBOARD_USERNAME")
+    waha_dashboard_password: str = Field(default="", alias="WAHA_DASHBOARD_PASSWORD")
+    waha_human_delay_seconds: float = Field(default=1.5, alias="WAHA_HUMAN_DELAY_SECONDS")
+
+    # Redis Cache & Distributed State (Optional)
+    redis_url: str = Field(default="", alias="REDIS_URL")
 
     # Guardrails & Admin
     confidence_threshold: float = Field(default=0.70, alias="CONFIDENCE_THRESHOLD")

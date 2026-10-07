@@ -1,11 +1,29 @@
+import re
 import httpx
 from typing import Optional, Dict, Any
 from core.config import settings
 from core.logger import logger
 
 
+def sanitize_chat_id(to_phone: str) -> str:
+    """
+    Menstandarkan Chat ID WhatsApp sesuai spesifikasi WAHA & Meta:
+    - Jika sudah memiliki domain '@' (@c.us, @g.us, @lid), bersihkan whitespace dan pertahankan format.
+    - Jika nomor telepon mentah (+62 812-3456-7890), hapus simbol non-digit dan format ke standard internasional (628...@c.us).
+    """
+    cleaned = str(to_phone).strip()
+    if "@" in cleaned:
+        return cleaned
+    # Hapus semua karakter non-digit (+, -, spasi, tanda kurung)
+    digits = re.sub(r"\D", "", cleaned)
+    # Jika diawali awalan lokal '08', konversi ke prefix internasional Indonesia '628'
+    if digits.startswith("08"):
+        digits = "62" + digits[1:]
+    return f"{digits}@c.us"
+
+
 class WhatsAppService:
-    """Service untuk integrasi WhatsApp Cloud API resmi (Meta Graph API)."""
+    """Service terpadu untuk integrasi WhatsApp via WAHA (WhatsApp HTTP API) & Meta Cloud API."""
 
     def __init__(self):
         self.phone_number_id = settings.meta_wa_phone_number_id
@@ -13,38 +31,48 @@ class WhatsAppService:
         self.api_version = settings.meta_graph_version
         self.base_url = f"https://graph.facebook.com/{self.api_version}"
 
+    def _get_waha_headers(self) -> Dict[str, str]:
+        """Menyiapkan HTTP header untuk WAHA API, termasuk autentikasi X-Api-Key jika dikonfigurasi."""
+        headers = {"Content-Type": "application/json"}
+        if settings.waha_api_key:
+            headers["X-Api-Key"] = settings.waha_api_key
+        return headers
+
     async def send_text_message(self, to_phone: str, text: str, session: Optional[str] = None) -> bool:
-        """Mengirim pesan teks ke nomor WhatsApp petani (Mendukung WAHA & Meta)."""
+        """Mengirim pesan teks ke nomor WhatsApp petani (Mendukung WAHA & Meta Cloud API)."""
+        chat_id = sanitize_chat_id(to_phone)
+
         if settings.whatsapp_provider == "waha":
-            chat_id = to_phone if "@" in to_phone else f"{to_phone}@c.us"
             target_session = session or settings.waha_session
             waha_url = f"{settings.waha_base_url}/api/sendText"
+            headers = self._get_waha_headers()
             payload = {
                 "session": target_session,
                 "chatId": chat_id,
-                "text": text
+                "text": text,
+                "linkPreview": True
             }
             try:
-                async with httpx.AsyncClient(timeout=15.0) as client:
-                    res = await client.post(waha_url, json=payload)
+                async with httpx.AsyncClient(timeout=20.0) as client:
+                    res = await client.post(waha_url, json=payload, headers=headers)
                     if res.status_code in [200, 201]:
                         logger.info(f"Pesan WA (WAHA) berhasil dikirim ke {chat_id} (session: {target_session})")
                         return True
                     elif res.status_code == 422 and "does not exist" in res.text:
-                        # Auto-discover session yang sedang WORKING
-                        logger.warning(f"Session '{target_session}' tidak ditemukan di WAHA, mencari session yang aktif...")
-                        sessions_res = await client.get(f"{settings.waha_base_url}/api/sessions")
+                        # Auto-discover session WAHA yang berstatus WORKING
+                        logger.warning(f"Session '{target_session}' tidak ditemukan di WAHA, mencari session aktif...")
+                        sessions_res = await client.get(f"{settings.waha_base_url}/api/sessions", headers=headers)
                         if sessions_res.status_code == 200:
                             sessions_list = sessions_res.json()
                             for s in sessions_list:
                                 if s.get("status") == "WORKING":
                                     fallback_session = s.get("name")
                                     payload["session"] = fallback_session
-                                    retry_res = await client.post(waha_url, json=payload)
+                                    retry_res = await client.post(waha_url, json=payload, headers=headers)
                                     if retry_res.status_code in [200, 201]:
                                         logger.info(f"Pesan WA (WAHA) berhasil dikirim ke {chat_id} via session aktif '{fallback_session}'")
                                         return True
-                        logger.error(f"Gagal kirim WAHA: tidak ada session aktif yang ditemukan.")
+                        logger.error("Gagal kirim WAHA: tidak ada session aktif yang ditemukan.")
                         return False
                     else:
                         logger.error(f"Gagal kirim WAHA (status {res.status_code}): {res.text}")
@@ -53,10 +81,43 @@ class WhatsAppService:
                 logger.error(f"Error koneksi ke WAHA API ({settings.waha_base_url}): {e}")
                 return False
 
+        # Fallback ke Meta WhatsApp Cloud API resmi
+        if not self.access_token or not self.phone_number_id:
+            logger.warning(f"[MOCK SEND WA] Ke {chat_id}: {text[:100]}... (Token Meta belum diisi)")
+            return True
+
+        # Format nomor untuk Meta Cloud API (hanya angka tanpa @c.us)
+        meta_recipient = chat_id.replace("@c.us", "").replace("@s.whatsapp.net", "")
+        url = f"{self.base_url}/{self.phone_number_id}/messages"
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": meta_recipient,
+            "type": "text",
+            "text": {"preview_url": False, "body": text}
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                res = await client.post(url, headers=headers, json=payload)
+                if res.status_code in [200, 201]:
+                    logger.info(f"Pesan WA (Meta Cloud) berhasil dikirim ke {meta_recipient}")
+                    return True
+                else:
+                    logger.error(f"Gagal kirim WA Meta (status {res.status_code}): {res.text}")
+                    return False
+        except Exception as e:
+            logger.error(f"Error koneksi ke Meta Graph API: {e}")
+            return False
+
     async def start_typing(self, to_phone: str, session: Optional[str] = None) -> bool:
         """Menampilkan animasi 'sedang mengetik...' (typing presence) di WhatsApp petani."""
         if settings.whatsapp_provider == "waha":
-            chat_id = to_phone if "@" in to_phone else f"{to_phone}@c.us"
+            chat_id = sanitize_chat_id(to_phone)
             target_session = session or settings.waha_session
             url = f"{settings.waha_base_url}/api/{target_session}/presence"
             payload = {
@@ -65,7 +126,7 @@ class WhatsAppService:
             }
             try:
                 async with httpx.AsyncClient(timeout=5.0) as client:
-                    res = await client.post(url, json=payload)
+                    res = await client.post(url, json=payload, headers=self._get_waha_headers())
                     return res.status_code in [200, 201]
             except Exception as e:
                 logger.debug(f"Gagal set status typing di WAHA: {e}")
@@ -73,9 +134,9 @@ class WhatsAppService:
         return False
 
     async def stop_typing(self, to_phone: str, session: Optional[str] = None) -> bool:
-        """Menghentikan animasi 'sedang mengetik...' (presence paused) di WhatsApp."""
+        """Menghentikan animasi 'sedang mengetik...' dan mengembalikan status ke paused."""
         if settings.whatsapp_provider == "waha":
-            chat_id = to_phone if "@" in to_phone else f"{to_phone}@c.us"
+            chat_id = sanitize_chat_id(to_phone)
             target_session = session or settings.waha_session
             url = f"{settings.waha_base_url}/api/{target_session}/presence"
             payload = {
@@ -84,7 +145,7 @@ class WhatsAppService:
             }
             try:
                 async with httpx.AsyncClient(timeout=5.0) as client:
-                    res = await client.post(url, json=payload)
+                    res = await client.post(url, json=payload, headers=self._get_waha_headers())
                     return res.status_code in [200, 201]
             except Exception as e:
                 logger.debug(f"Gagal set status paused di WAHA: {e}")
@@ -94,7 +155,7 @@ class WhatsAppService:
     async def send_seen(self, to_phone: str, message_id: Optional[str] = None, session: Optional[str] = None) -> bool:
         """Mengirimkan tanda centang biru (telah dibaca / seen) ke WhatsApp petani."""
         if settings.whatsapp_provider == "waha":
-            chat_id = to_phone if "@" in to_phone else f"{to_phone}@c.us"
+            chat_id = sanitize_chat_id(to_phone)
             target_session = session or settings.waha_session
             url = f"{settings.waha_base_url}/api/sendSeen"
             payload = {
@@ -105,43 +166,12 @@ class WhatsAppService:
                 payload["messageIds"] = [message_id]
             try:
                 async with httpx.AsyncClient(timeout=5.0) as client:
-                    res = await client.post(url, json=payload)
+                    res = await client.post(url, json=payload, headers=self._get_waha_headers())
                     return res.status_code in [200, 201]
             except Exception as e:
                 logger.debug(f"Gagal kirim sendSeen di WAHA: {e}")
                 return False
         return False
-
-        # Fallback ke Meta WhatsApp Cloud API
-        if not self.access_token or not self.phone_number_id:
-            logger.warning(f"[MOCK SEND WA] Ke {to_phone}: {text[:100]}... (Token Meta belum diisi)")
-            return True
-
-        url = f"{self.base_url}/{self.phone_number_id}/messages"
-        headers = {
-            "Authorization": f"Bearer {self.access_token}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "messaging_product": "whatsapp",
-            "recipient_type": "individual",
-            "to": to_phone,
-            "type": "text",
-            "text": {"preview_url": False, "body": text}
-        }
-
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                res = await client.post(url, headers=headers, json=payload)
-                if res.status_code in [200, 201]:
-                    logger.info(f"Pesan WA berhasil dikirim ke {to_phone}")
-                    return True
-                else:
-                    logger.error(f"Gagal kirim WA (status {res.status_code}): {res.text}")
-                    return False
-        except Exception as e:
-            logger.error(f"Error koneksi ke Meta Graph API: {e}")
-            return False
 
     async def download_media(self, media_id: str) -> Optional[bytes]:
         """Mengunduh file media (foto/audio) dari WAHA atau Meta Graph API berdasarkan media_id / URL."""
@@ -160,8 +190,9 @@ class WhatsAppService:
                 download_url = f"{settings.waha_base_url}{download_url}"
 
             try:
+                headers = self._get_waha_headers() if settings.waha_base_url in download_url else {}
                 async with httpx.AsyncClient(timeout=30.0) as client:
-                    media_res = await client.get(download_url)
+                    media_res = await client.get(download_url, headers=headers)
                     if media_res.status_code == 200:
                         logger.info(f"Berhasil mengunduh media dari WAHA: {download_url} ({len(media_res.content)} bytes)")
                         return media_res.content
@@ -201,4 +232,3 @@ class WhatsAppService:
         except Exception as e:
             logger.error(f"Exception saat download media dari Meta: {e}")
             return None
-

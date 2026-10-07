@@ -88,11 +88,15 @@ CREATE TABLE IF NOT EXISTS consultation_audits (
     suspected_disease VARCHAR(150),
     confidence_score FLOAT NOT NULL,
     is_referred_to_ppl BOOLEAN DEFAULT FALSE,
+    followup_notes TEXT, -- Catatan tindak lanjut petugas PPL
     media_url TEXT, -- URL file bukti gejala di Supabase Storage
     farmer_query TEXT NOT NULL,
     bot_recommendation JSONB NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Migrasi idempoten untuk database yang sudah ada sebelumnya
+ALTER TABLE consultation_audits ADD COLUMN IF NOT EXISTS followup_notes TEXT;
 
 -- Index untuk filter cepat nomor telepon dan tanggal audit
 CREATE INDEX IF NOT EXISTS idx_consultation_phone ON consultation_audits(phone_number);

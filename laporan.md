@@ -13,7 +13,7 @@ Sistem menggabungkan pendekatan **Retrieval-Augmented Generation (RAG)** semanti
 - **Status Sistem**: *Fully Functional MVP / Production-Ready Core*.
 - **Cakupan Pengetahuan**: 11 Penyakit & Hama Utama (6 Cabai, 5 Padi) terindeks 768 dimensi di Supabase pgvector.
 - **Koleksi Dataset Visual**: 292 foto referensi terverifikasi yang tersimpan di Supabase Storage (`disease-references`) dan terhubung otomatis pada hasil diagnosa bot.
-- **Konektivitas WhatsApp**: Berjalan secara live menggunakan WAHA engine `WEBJS` terhubung ke nomor bot WhatsApp operasional (`+62 895-4181-XXXX` / terdaftar pada sesi WAHA).
+- **Konektivitas WhatsApp**: Berjalan secara live menggunakan WAHA engine `GOWS` (Whatsmeow ~40MB RAM) dengan proteksi webhook HMAC SHA-512, anti-ban hygiene, dan auto-restart sesi.
 - **Kualitas Kode & Pengujian**: 13/13 automated test suites lolos (100% pass).
 
 ---
