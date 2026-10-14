@@ -7,6 +7,8 @@ from core.logger import logger
 from agents.schemas import DiseaseDiagnosisResult, PracticalSteps
 from agents.prompts import SYSTEM_PROMPT_DIAGNOSIS
 from database.repository import ConsultationRepository
+from services.cv_preprocessor import CVPreprocessor, CVQualityResult
+from services.visual_rag_service import VisualRAGService, VisualMatchResult
 
 
 class DiagnosisAgent:
@@ -20,6 +22,9 @@ class DiagnosisAgent:
         else:
             self.client = None
             logger.warning("Gemini Client belum diinisialisasi karena GEMINI_API_KEY kosong.")
+        
+        # Inisialisasi Visual RAG Image Vector Search
+        self.visual_rag = VisualRAGService()
 
     def _get_embedding(self, text: str) -> List[float]:
         """Menghasilkan vector embedding untuk pencarian RAG di Supabase."""
@@ -39,11 +44,11 @@ class DiagnosisAgent:
             return []
 
     def _get_candidate_models(self) -> List[str]:
-        # Dahulukan gemini-flash-latest untuk latensi tercepat dan minim antrean 503
-        candidates = ["gemini-flash-latest"]
+        # Dahulukan gemini-3.5-flash-lite untuk kehandalan, latensi tercepat, dan bebas antrean 503
+        candidates = ["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3.1-flash-lite"]
         if self.model_name and self.model_name.replace("models/", "") not in candidates:
             candidates.append(self.model_name.replace("models/", ""))
-        for m in ["gemini-3.5-flash", "gemini-3.8-flash"]:
+        for m in ["gemini-flash-latest", "gemini-3.5-flash", "gemini-3.8-flash"]:
             if m not in candidates:
                 candidates.append(m)
         return candidates
@@ -132,32 +137,110 @@ Kembalikan hasil diagnosis terstruktur sesuai skema DiseaseDiagnosisResult.
 
     async def diagnose_image(self, image_bytes: bytes, user_caption: str = "") -> DiseaseDiagnosisResult:
         """
-        Melakukan diagnosa visual multimodal menggunakan Gemini Flash Vision.
-        ATURAN MUTLAK: Hanya menerima foto CABAI dan PADI. Tanaman lain akan ditolak secara aman.
+        Alur Diagnosa Visual Komprehensif:
+        1. OpenCV Preprocessor (Blur & Plant Foliage Verification Gatekeeper).
+        2. Visual RAG (Image-to-Image Vector Cosine Search di Supabase Gallery).
+        3. Retrieval SOP Kementan Terkait (Text Knowledge RAG).
+        4. Multimodal Synthesis (Gemini Flash Vision + Visual Reference + SOP Kementan).
         """
         if not self.client:
             return self._fallback_error_result("cabai")
 
+        # ==========================================================
+        # TAHAP 1: OpenCV Preprocessor (Quality & Plant Gatekeeper)
+        # ==========================================================
+        cv_res: CVQualityResult = CVPreprocessor.inspect_image(image_bytes)
+        if not cv_res.is_valid:
+            logger.warning(f"[DiagnosisAgent] Foto ditolak oleh OpenCV Preprocessor: {cv_res.rejection_reason}")
+            return DiseaseDiagnosisResult(
+                is_supported_crop=cv_res.is_plant,
+                unsupported_message=cv_res.rejection_reason,
+                nama_tanaman="cabai",
+                nama_penyakit="Kualitas Citra Tidak Memenuhi Standar",
+                penyebab_biologis="Prapemrosesan Citra (OpenCV)",
+                confidence_score=0.0,
+                penjelasan_singkat=cv_res.rejection_reason or "Kualitas citra belum memadai untuk diagnosa.",
+                langkah_penanganan=PracticalSteps(
+                    mekanis="Ambil foto ulang lebih dekat dengan fokus stabil.",
+                    sanitasi="Pastikan pencahayaan cukup terang dan objek daun/buah tampak jelas.",
+                    bahan_aktif_kimiawi=None
+                ),
+                rujuk_ke_ppl=False,
+                catatan_keamanan="Foto belum memenuhi standar ketajaman citra untuk dianalisis.",
+                cv_blur_score=cv_res.blur_score,
+                cv_plant_coverage=cv_res.plant_coverage,
+                cv_organ_detected=cv_res.organ_hint
+            )
+
+        # ==========================================================
+        # TAHAP 2: Visual RAG (Image-to-Image Vector Similarity Search)
+        # ==========================================================
+        visual_match: VisualMatchResult = self.visual_rag.search_similar_images(
+            image_bytes=image_bytes,
+            top_k=3,
+            organ_filter=cv_res.organ_hint
+        )
+
+        visual_candidates_text = "\n".join([
+            f"  - {m['disease_name']} ({m['organ']}): Kemiripan Visual {m['similarity_pct']}% (URL: {m['storage_url']})"
+            for m in visual_match.top_matches
+        ])
+
+        # ==========================================================
+        # TAHAP 3: Retrieval SOP Kementan Terkait (Text Knowledge RAG)
+        # ==========================================================
+        kb_context_str = ""
+        if visual_match.has_match:
+            try:
+                query_vec = self._get_embedding(f"Penyakit {visual_match.best_disease_name} pada {cv_res.organ_hint}")
+                if query_vec:
+                    docs = await ConsultationRepository.match_knowledge(
+                        query_embedding=query_vec,
+                        match_threshold=0.50,
+                        match_count=2,
+                        commodity="cabai"
+                    )
+                    if docs:
+                        kb_context_str = "\n".join([
+                            f"[SOP Resmi Kementan: {d.get('disease_name')} ({d.get('scientific_name')})]\n"
+                            f"Gejala: {d.get('symptoms')}\n"
+                            f"Mekanis: {d.get('mechanical_treatment')}\n"
+                            f"Sanitasi: {d.get('sanitation_treatment')}\n"
+                            f"Bahan Aktif: {d.get('chemical_actives')}"
+                            for d in docs
+                        ])
+            except Exception as e:
+                logger.warning(f"Gagal mengambil teks RAG untuk visual match: {e}")
+
+        # ==========================================================
+        # TAHAP 4: Gemini Flash Vision Multimodal Synthesis
+        # ==========================================================
         prompt = f"""\
 {SYSTEM_PROMPT_DIAGNOSIS}
 
-TUGAS VISION MULTIMODAL:
+TUGAS VISION MULTIMODAL DENGAN BANTUAN OPENCV & VISUAL RAG:
 Anda menerima foto kondisi fisik tanaman dari petani di lapangan.
 
-ATURAN VALIDASI TANAMAN (SANGAT KETAT):
-1. Periksa apakah foto ini benar-benar tanaman CABAI (Capsicum annuum) atau PADI (Oryza sativa).
-2. JIKA BUKAN CABAI DAN BUKAN PADI (contoh: foto manusia, sawit, jagung, kopi, sayuran lain, atau benda mati):
-   - Wajib set `is_supported_crop = False`
-   - Wajib set `nama_tanaman = 'lainnya'`
-   - Wajib set `confidence_score = 0.0`
-   - Wajib isi `unsupported_message = 'Mohon maaf Bapak/Ibu Petani, layanan konsultasi foto TaniPintar saat ini KHUSUS didedikasikan untuk tanaman CABAI dan PADI. Foto yang dikirim terdeteksi bukan tanaman cabai atau padi. Silakan kirimkan foto daun, batang, atau buah cabai/padi Anda.'`
-   - Selesai, jangan spekulasi nama penyakit.
-3. JIKA BENAR CABAI ATAU PADI:
-   - Cocokkan gejala visual dengan salah satu dari 11 Penyakit Utama:
-     Cabai: (1) Antraknosa/Patek, (2) Virus Kuning Gemini/Bulai, (3) Layu Bakteri, (4) Layu Fusarium, (5) Thrips/Keriting Daun, (6) Bercak Daun Cercospora.
-     Padi: (1) Blas Daun/Leher, (2) Hawar Daun Bakteri/Kresek, (3) Penggerek Batang (Sundep/Beluk), (4) Tungro, (5) Wereng Batang Coklat (WBC).
-   - Tentukan confidence_score (0.0 - 1.0). Jika foto buram atau gejala tidak jelas, berikan confidence < 0.70 dan aktifkan rujuk_ke_ppl=True.
-   - Sertakan langkah mekanis, sanitasi, dan bahan aktif anjuran.
+HASIL ANALISIS OPENCV PREPROCESSOR:
+- Skor Fokus/Ketajaman (Laplacian Var): {cv_res.blur_score:.1f} (Threshold: > {CVPreprocessor.BLUR_THRESHOLD})
+- Estimasi Luas Area Tanaman: {cv_res.plant_coverage*100:.1f}%
+- Estimasi Organ Tanaman: {cv_res.organ_hint}
+
+HASIL VISUAL RAG (IMAGE-TO-IMAGE VECTOR SEARCH DI SUPABASE STORAGE):
+- Indikasi Terkuat: {visual_match.best_disease_name} ({visual_match.scientific_name})
+- Skor Kemiripan Visual Vektor: {visual_match.similarity_percentage}%
+- Foto Referensi Supabase: {visual_match.reference_storage_url}
+- 3 Kandidat Referensi Teratas:
+{visual_candidates_text}
+
+REFERENSI SOP KEMENTAN TERKAIT:
+{kb_context_str if kb_context_str else "Gunakan basis pengetahuan standar 11 penyakit padi dan cabai."}
+
+PETUNJUK ANALISIS:
+1. Validasi apakah lesi pada foto petani cocok dengan kandidat Visual RAG di atas ({visual_match.best_disease_name}).
+2. Jika sangat sesuai, gunakan nama penyakit dan patogen tersebut, serta integrasikan rekomendasi SOP Kementan (mekanis, sanitasi, bahan aktif).
+3. Berikan confidence_score realistis (0.70 - 0.98) jika visual jelas.
+4. Pastikan response sesuai skema JSON DiseaseDiagnosisResult.
 
 Keterangan Tambahan Petani: "{user_caption}"
 """
@@ -168,11 +251,23 @@ Keterangan Tambahan Petani: "{user_caption}"
             )
             parsed_result = self._generate_structured([prompt, image_part])
             if parsed_result:
+                parsed_result.visual_match_similarity = visual_match.similarity_percentage
+                parsed_result.visual_reference_url = visual_match.reference_storage_url
+                parsed_result.visual_match_reasoning = visual_match.visual_reasoning
+                parsed_result.cv_blur_score = cv_res.blur_score
+                parsed_result.cv_plant_coverage = cv_res.plant_coverage
+                parsed_result.cv_organ_detected = cv_res.organ_hint
                 return parsed_result
         except Exception as e:
             logger.error(f"Error saat menyiapkan foto Gemini Vision: {e}")
 
-        return self._fallback_error_result("cabai")
+        fallback = self._fallback_error_result("cabai")
+        fallback.visual_match_similarity = visual_match.similarity_percentage
+        fallback.visual_reference_url = visual_match.reference_storage_url
+        fallback.cv_blur_score = cv_res.blur_score
+        fallback.cv_plant_coverage = cv_res.plant_coverage
+        fallback.cv_organ_detected = cv_res.organ_hint
+        return fallback
 
     def _fallback_error_result(self, crop_name: str) -> DiseaseDiagnosisResult:
         return DiseaseDiagnosisResult(

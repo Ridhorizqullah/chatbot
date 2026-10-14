@@ -7,16 +7,19 @@ services:
     restart: unless-stopped
     depends_on:
       - waha
-      - redis
     ports:
       - "8000:8000"
     env_file:
       - .env
     environment:
+      - APP_ENV=${APP_ENV:-development}
       - WAHA_BASE_URL=http://waha:3000
-      - REDIS_URL=redis://redis:6379/0
     volumes:
+      # Live code reload untuk mempermudah perbaikan/development tanpa rebuild berulang
+      - ./:/app
+      - /app/.venv
       - ./logs:/app/logs
+      - ./data:/app/data
     networks:
       - tanipintar-network
 
@@ -56,10 +59,11 @@ services:
 
       # Pengelolaan Media
       - WHATSAPP_DOWNLOAD_MEDIA=true
-      - WHATSAPP_FILES_LIFETIME=180
+      - WHATSAPP_FILES_LIFETIME=3600
       - WAHA_BASE_URL=http://waha:3000
     volumes:
       - ./waha_data:/app/.sessions
+      - waha_files:/tmp/whatsapp-files
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
@@ -68,19 +72,8 @@ services:
     networks:
       - tanipintar-network
 
-  redis:
-    image: redis:7-alpine
-    container_name: tanipintar-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - tanipintar-network
-
 volumes:
-  redis_data:
+  waha_files:
 
 networks:
   tanipintar-network:

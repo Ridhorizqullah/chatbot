@@ -9,9 +9,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (curl untuk healthcheck, libglib & libgomp untuk OpenCV & NumPy)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    libglib2.0-0 \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python dependencies

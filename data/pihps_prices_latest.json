@@ -1,0 +1,2602 @@
+[
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Beras",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11500,
+    "consumer_price": 13950,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Beras",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11500,
+    "consumer_price": 13950,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Beras",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11500,
+    "consumer_price": 13950,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Beras",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11500,
+    "consumer_price": 13950,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Beras",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11500,
+    "consumer_price": 13950,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Beras",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11500,
+    "consumer_price": 13950,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Beras",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11500,
+    "consumer_price": 13950,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Beras",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11500,
+    "consumer_price": 13950,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Beras",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11500,
+    "consumer_price": 13950,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Beras",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11500,
+    "consumer_price": 13950,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Beras",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11500,
+    "consumer_price": 13950,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Beras",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11500,
+    "consumer_price": 13950,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Beras",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11500,
+    "consumer_price": 13950,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Beras",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11500,
+    "consumer_price": 13950,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Beras",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11700,
+    "consumer_price": 14100,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Beras",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11700,
+    "consumer_price": 14100,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Beras",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11800,
+    "consumer_price": 14300,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Beras",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11800,
+    "consumer_price": 14300,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Beras",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11900,
+    "consumer_price": 14450,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Beras",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11900,
+    "consumer_price": 14450,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 10500,
+    "consumer_price": 12700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 10500,
+    "consumer_price": 12700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 10500,
+    "consumer_price": 12700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 10500,
+    "consumer_price": 12700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 10500,
+    "consumer_price": 12700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 10500,
+    "consumer_price": 12700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 10500,
+    "consumer_price": 12700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 10500,
+    "consumer_price": 12700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 10500,
+    "consumer_price": 12700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 10500,
+    "consumer_price": 12700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 10500,
+    "consumer_price": 12700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 10500,
+    "consumer_price": 12700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 10500,
+    "consumer_price": 12700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 10500,
+    "consumer_price": 12700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 10500,
+    "consumer_price": 12750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 10500,
+    "consumer_price": 12750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 10600,
+    "consumer_price": 12850,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 10600,
+    "consumer_price": 12850,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 10900,
+    "consumer_price": 13150,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Beras Kualitas Bawah I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 10900,
+    "consumer_price": 13150,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 9600,
+    "consumer_price": 11650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 9700,
+    "consumer_price": 11750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 9700,
+    "consumer_price": 11750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 9700,
+    "consumer_price": 11750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Beras Kualitas Bawah II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 9700,
+    "consumer_price": 11750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Bawah II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12100,
+    "consumer_price": 14650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12100,
+    "consumer_price": 14650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12000,
+    "consumer_price": 14500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12000,
+    "consumer_price": 14500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12000,
+    "consumer_price": 14500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12000,
+    "consumer_price": 14500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12000,
+    "consumer_price": 14500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12000,
+    "consumer_price": 14500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12000,
+    "consumer_price": 14550,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12000,
+    "consumer_price": 14550,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12000,
+    "consumer_price": 14550,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12000,
+    "consumer_price": 14550,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12000,
+    "consumer_price": 14550,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12000,
+    "consumer_price": 14550,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12100,
+    "consumer_price": 14650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12100,
+    "consumer_price": 14650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12200,
+    "consumer_price": 14800,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12200,
+    "consumer_price": 14800,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12200,
+    "consumer_price": 14800,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Beras Kualitas Medium I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12200,
+    "consumer_price": 14800,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11400,
+    "consumer_price": 13750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11400,
+    "consumer_price": 13750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11400,
+    "consumer_price": 13750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11400,
+    "consumer_price": 13750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11400,
+    "consumer_price": 13750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11400,
+    "consumer_price": 13750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11400,
+    "consumer_price": 13750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11400,
+    "consumer_price": 13750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11400,
+    "consumer_price": 13750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11400,
+    "consumer_price": 13750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11400,
+    "consumer_price": 13750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11400,
+    "consumer_price": 13750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11500,
+    "consumer_price": 13900,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11500,
+    "consumer_price": 13900,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11500,
+    "consumer_price": 13900,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11500,
+    "consumer_price": 13900,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11500,
+    "consumer_price": 13900,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11500,
+    "consumer_price": 13900,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 11700,
+    "consumer_price": 14150,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Beras Kualitas Medium II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 11700,
+    "consumer_price": 14150,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Medium II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Beras Kualitas Super I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 13200,
+    "consumer_price": 16000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Beras Kualitas Super I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 13200,
+    "consumer_price": 16000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Beras Kualitas Super I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 13200,
+    "consumer_price": 16000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Beras Kualitas Super I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 13200,
+    "consumer_price": 16000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Beras Kualitas Super I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 13200,
+    "consumer_price": 16000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Beras Kualitas Super I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 13200,
+    "consumer_price": 16000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Beras Kualitas Super I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 13200,
+    "consumer_price": 16000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Beras Kualitas Super I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 13200,
+    "consumer_price": 16000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Beras Kualitas Super I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 13200,
+    "consumer_price": 16000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Beras Kualitas Super I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 13200,
+    "consumer_price": 16000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Beras Kualitas Super I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 13200,
+    "consumer_price": 16000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Beras Kualitas Super I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 13200,
+    "consumer_price": 16000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Beras Kualitas Super I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 13200,
+    "consumer_price": 16000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Beras Kualitas Super I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 13200,
+    "consumer_price": 16000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Beras Kualitas Super I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 13400,
+    "consumer_price": 16250,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Beras Kualitas Super I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 13400,
+    "consumer_price": 16250,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Beras Kualitas Super I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 13900,
+    "consumer_price": 16750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Beras Kualitas Super I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 13900,
+    "consumer_price": 16750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Beras Kualitas Super I",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 14200,
+    "consumer_price": 17150,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Beras Kualitas Super I",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 14200,
+    "consumer_price": 17150,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super I untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Beras Kualitas Super II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12400,
+    "consumer_price": 15000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Beras Kualitas Super II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12400,
+    "consumer_price": 15000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Beras Kualitas Super II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12400,
+    "consumer_price": 15000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Beras Kualitas Super II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12400,
+    "consumer_price": 15000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Beras Kualitas Super II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12400,
+    "consumer_price": 15000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Beras Kualitas Super II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12400,
+    "consumer_price": 15000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Beras Kualitas Super II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12400,
+    "consumer_price": 15000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Beras Kualitas Super II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12400,
+    "consumer_price": 15000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Beras Kualitas Super II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12400,
+    "consumer_price": 15000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Beras Kualitas Super II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12400,
+    "consumer_price": 15000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Beras Kualitas Super II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12400,
+    "consumer_price": 15000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Beras Kualitas Super II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12400,
+    "consumer_price": 15000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Beras Kualitas Super II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12400,
+    "consumer_price": 15000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Beras Kualitas Super II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12400,
+    "consumer_price": 15000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Beras Kualitas Super II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12600,
+    "consumer_price": 15250,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Beras Kualitas Super II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12600,
+    "consumer_price": 15250,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Beras Kualitas Super II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 12900,
+    "consumer_price": 15650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Beras Kualitas Super II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 12900,
+    "consumer_price": 15650,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Beras Kualitas Super II",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 13100,
+    "consumer_price": 15800,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Beras Kualitas Super II",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 13100,
+    "consumer_price": 15800,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Beras Kualitas Super II untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Cabai Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 33200,
+    "consumer_price": 40000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Cabai Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 33864,
+    "consumer_price": 40800,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Cabai Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 21700,
+    "consumer_price": 26250,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Cabai Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 22134,
+    "consumer_price": 26775,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Cabai Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 29000,
+    "consumer_price": 35000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Cabai Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 29580,
+    "consumer_price": 35700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Cabai Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 26300,
+    "consumer_price": 31750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Cabai Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 26826,
+    "consumer_price": 32385,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Cabai Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 29400,
+    "consumer_price": 35500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Cabai Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 29988,
+    "consumer_price": 36210,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Cabai Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 41500,
+    "consumer_price": 50000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Cabai Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 42330,
+    "consumer_price": 51000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Cabai Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 27300,
+    "consumer_price": 33000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Cabai Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 27846,
+    "consumer_price": 33660,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Cabai Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 23800,
+    "consumer_price": 28750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Cabai Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 24276,
+    "consumer_price": 29325,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Cabai Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 23800,
+    "consumer_price": 28750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Cabai Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 24276,
+    "consumer_price": 29325,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Cabai Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 30000,
+    "consumer_price": 36250,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Cabai Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 30600,
+    "consumer_price": 36975,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Cabai Merah Besar",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 33200,
+    "consumer_price": 40000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Cabai Merah Besar",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 33864,
+    "consumer_price": 40800,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Cabai Merah Besar",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 22800,
+    "consumer_price": 27500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Cabai Merah Besar",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 23256,
+    "consumer_price": 28050,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Cabai Merah Besar",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 29000,
+    "consumer_price": 35000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Cabai Merah Besar",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 29580,
+    "consumer_price": 35700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Cabai Merah Besar",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 28600,
+    "consumer_price": 34500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Cabai Merah Besar",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 29172,
+    "consumer_price": 35190,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Cabai Merah Besar",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 31100,
+    "consumer_price": 37500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Cabai Merah Besar",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 31722,
+    "consumer_price": 38250,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Cabai Merah Besar",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 45600,
+    "consumer_price": 55000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Cabai Merah Besar",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 46512,
+    "consumer_price": 56100,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Cabai Merah Besar",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 31100,
+    "consumer_price": 37500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Cabai Merah Besar",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 31722,
+    "consumer_price": 38250,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Cabai Merah Besar",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 24900,
+    "consumer_price": 30000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Cabai Merah Besar",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 25398,
+    "consumer_price": 30600,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Cabai Merah Besar",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 26900,
+    "consumer_price": 32500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Cabai Merah Besar",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 27438,
+    "consumer_price": 33150,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Cabai Merah Besar",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 26900,
+    "consumer_price": 32500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Cabai Merah Besar",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 27438,
+    "consumer_price": 33150,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Besar untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Cabai Merah Keriting",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 33200,
+    "consumer_price": 40000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Cabai Merah Keriting",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 33864,
+    "consumer_price": 40800,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Cabai Merah Keriting",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 20700,
+    "consumer_price": 25000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Cabai Merah Keriting",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 21114,
+    "consumer_price": 25500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Cabai Merah Keriting",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 29000,
+    "consumer_price": 35000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Cabai Merah Keriting",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 29580,
+    "consumer_price": 35700,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Cabai Merah Keriting",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 24000,
+    "consumer_price": 29000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Cabai Merah Keriting",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 24480,
+    "consumer_price": 29580,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Cabai Merah Keriting",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 27800,
+    "consumer_price": 33500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Cabai Merah Keriting",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 28356,
+    "consumer_price": 34170,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Cabai Merah Keriting",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 37300,
+    "consumer_price": 45000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Cabai Merah Keriting",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 38046,
+    "consumer_price": 45900,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Cabai Merah Keriting",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 23600,
+    "consumer_price": 28500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Cabai Merah Keriting",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 24072,
+    "consumer_price": 29070,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Cabai Merah Keriting",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 22800,
+    "consumer_price": 27500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Cabai Merah Keriting",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 23256,
+    "consumer_price": 28050,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Cabai Merah Keriting",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 20700,
+    "consumer_price": 25000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Cabai Merah Keriting",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 21114,
+    "consumer_price": 25500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Cabai Merah Keriting",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 33200,
+    "consumer_price": 40000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Cabai Merah Keriting",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 33864,
+    "consumer_price": 40800,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Merah Keriting untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Cabai Rawit",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 51800,
+    "consumer_price": 62500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Cabai Rawit",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 52836,
+    "consumer_price": 63750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Cabai Rawit",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 37300,
+    "consumer_price": 45000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Cabai Rawit",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 38046,
+    "consumer_price": 45900,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Cabai Rawit",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 52900,
+    "consumer_price": 63750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Cabai Rawit",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 53958,
+    "consumer_price": 65025,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Cabai Rawit",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 46600,
+    "consumer_price": 56250,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Cabai Rawit",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 47532,
+    "consumer_price": 57375,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Cabai Rawit",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 40400,
+    "consumer_price": 48750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Cabai Rawit",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 41208,
+    "consumer_price": 49725,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Cabai Rawit",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 48700,
+    "consumer_price": 58750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Cabai Rawit",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 49674,
+    "consumer_price": 59925,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Cabai Rawit",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 32500,
+    "consumer_price": 39250,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Cabai Rawit",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 33150,
+    "consumer_price": 40035,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Cabai Rawit",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 32100,
+    "consumer_price": 38750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Cabai Rawit",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 32742,
+    "consumer_price": 39525,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Cabai Rawit",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 33200,
+    "consumer_price": 40000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Cabai Rawit",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 33864,
+    "consumer_price": 40800,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Cabai Rawit",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 40400,
+    "consumer_price": 48750,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Cabai Rawit",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 41208,
+    "consumer_price": 49725,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 58100,
+    "consumer_price": 70000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 59262,
+    "consumer_price": 71400,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 37300,
+    "consumer_price": 45000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 38046,
+    "consumer_price": 45900,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 45600,
+    "consumer_price": 55000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 46512,
+    "consumer_price": 56100,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 43500,
+    "consumer_price": 52500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 44370,
+    "consumer_price": 53550,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 39400,
+    "consumer_price": 47500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 40188,
+    "consumer_price": 48450,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 39400,
+    "consumer_price": 47500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 40188,
+    "consumer_price": 48450,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 33200,
+    "consumer_price": 40000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 33864,
+    "consumer_price": 40800,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 33200,
+    "consumer_price": 40000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 33864,
+    "consumer_price": 40800,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 31100,
+    "consumer_price": 37500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 31722,
+    "consumer_price": 38250,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 31100,
+    "consumer_price": 37500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Cabai Rawit Hijau",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 31722,
+    "consumer_price": 38250,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Hijau untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Cabai Rawit Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 45600,
+    "consumer_price": 55000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-01-01",
+    "commodity": "Cabai Rawit Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 46512,
+    "consumer_price": 56100,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Cabai Rawit Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 37300,
+    "consumer_price": 45000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-02-02",
+    "commodity": "Cabai Rawit Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 38046,
+    "consumer_price": 45900,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Cabai Rawit Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 60100,
+    "consumer_price": 72500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-03-02",
+    "commodity": "Cabai Rawit Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 61302,
+    "consumer_price": 73950,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Cabai Rawit Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 49800,
+    "consumer_price": 60000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-04-01",
+    "commodity": "Cabai Rawit Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 50796,
+    "consumer_price": 61200,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Cabai Rawit Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 41500,
+    "consumer_price": 50000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-05-01",
+    "commodity": "Cabai Rawit Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 42330,
+    "consumer_price": 51000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Cabai Rawit Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 58100,
+    "consumer_price": 70000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-06-01",
+    "commodity": "Cabai Rawit Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 59262,
+    "consumer_price": 71400,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Cabai Rawit Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 31900,
+    "consumer_price": 38500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-07-01",
+    "commodity": "Cabai Rawit Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 32538,
+    "consumer_price": 39270,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Cabai Rawit Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 31100,
+    "consumer_price": 37500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-08-03",
+    "commodity": "Cabai Rawit Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 31722,
+    "consumer_price": 38250,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Cabai Rawit Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 35200,
+    "consumer_price": 42500,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-09-01",
+    "commodity": "Cabai Rawit Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 35904,
+    "consumer_price": 43350,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra Magelang (Jawa Tengah)."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Cabai Rawit Merah",
+    "province": "D.I. Yogyakarta",
+    "farmgate_price": 49800,
+    "consumer_price": 60000,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra D.I. Yogyakarta."
+  },
+  {
+    "price_date": "2026-10-01",
+    "commodity": "Cabai Rawit Merah",
+    "province": "Magelang (Jawa Tengah)",
+    "farmgate_price": 50796,
+    "consumer_price": 61200,
+    "unit": "kg",
+    "source": "PIHPS Bank Indonesia (Pasar Tradisional)",
+    "notes": "Data riil PIHPS komoditas Cabai Rawit Merah untuk sentra Magelang (Jawa Tengah)."
+  }
+]

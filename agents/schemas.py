@@ -56,6 +56,31 @@ class DiseaseDiagnosisResult(BaseModel):
     catatan_keamanan: str = Field(
         description="Instruksi keselamatan penting penggunaan Alat Pelindung Diri (APD) dan waktu aplikasi aman."
     )
+    # Metrik Computer Vision OpenCV & Visual RAG
+    visual_match_similarity: Optional[float] = Field(
+        default=None,
+        description="Persentase kemiripan visual (0.0 - 100.0%) dengan pustaka foto referensi di Supabase Storage."
+    )
+    visual_reference_url: Optional[str] = Field(
+        default=None,
+        description="URL publik foto referensi di Supabase Storage yang paling mirip dengan gejala tanaman petani."
+    )
+    visual_match_reasoning: Optional[str] = Field(
+        default=None,
+        description="Penjelasan perbandingan visual antara foto kiriman petani dengan foto referensi."
+    )
+    cv_blur_score: Optional[float] = Field(
+        default=None,
+        description="Skor ketajaman citra dari pengujian Laplacian OpenCV."
+    )
+    cv_plant_coverage: Optional[float] = Field(
+        default=None,
+        description="Persentase estimasi area tanaman berdasarkan segmentasi ruang warna HSV."
+    )
+    cv_organ_detected: Optional[str] = Field(
+        default=None,
+        description="Organ tanaman yang terdeteksi oleh OpenCV ('buah', 'daun', 'tanaman_utuh')."
+    )
 
 
 class CommodityPriceItem(BaseModel):

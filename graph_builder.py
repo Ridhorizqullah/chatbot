@@ -203,17 +203,26 @@ async def weather_node(state: TaniState) -> Dict[str, Any]:
     """Fitur 5: Mengambil data prakiraan cuaca Open-Meteo & advisory semprot."""
     query = state.get("user_message", "")
 
-    # Alias & normalisasi nama kota populer (singkatan/sebutan lokal)
+    # Alias & normalisasi nama sentra fokus DIY & Magelang
     CITY_ALIASES = {
         "jogja": "Yogyakarta",
         "yogya": "Yogyakarta",
-        "jkt": "Jakarta",
-        "sby": "Surabaya",
-        "bdg": "Bandung",
-        "mks": "Makassar",
-        "sby": "Surabaya",
+        "diy": "Yogyakarta",
+        "sleman": "Sleman",
+        "bantul": "Bantul",
+        "kulonprogo": "Kulon Progo",
+        "kulon progo": "Kulon Progo",
+        "wates": "Wates",
+        "garongan": "Garongan",
+        "magelang": "Magelang",
+        "sawangan": "Sawangan",
+        "muntilan": "Muntilan",
+        "ngablak": "Ngablak",
+        "mertoyudan": "Mertoyudan",
+        "pakis": "Pakis",
+        "borobudur": "Borobudur",
         "solo": "Surakarta",
-        "jog": "Yogyakarta",
+        "klaten": "Klaten",
     }
 
     # Kata-kata yang BUKAN nama lokasi
@@ -226,12 +235,12 @@ async def weather_node(state: TaniState) -> Dict[str, Any]:
         "gimana", "gimana", "dong", "yuk", "mau", "dari", "akan"
     }
 
-    loc_guess = "Karawang"  # default sentra pertanian
+    loc_guess = "Yogyakarta"  # default fokus wilayah D.I. Yogyakarta
     query_lower = query.lower().replace("?", "").replace("!", "").replace(",", "").replace(".", "")
 
-    # 1. Cek alias dulu (jogja, solo, dll)
+    # 1. Cek alias dulu (jogja, sleman, magelang, muntilan, dll)
     for alias, city in CITY_ALIASES.items():
-        if alias in query_lower.split():
+        if alias in query_lower.split() or alias in query_lower:
             loc_guess = city
             break
     else:
@@ -271,11 +280,11 @@ async def greeting_node(state: TaniState) -> Dict[str, Any]:
         "1. 🔬 *Konsultasi Penyakit Teks:* Tanya gejala 11 penyakit cabai & padi.\n"
         "   _Contoh: 'Buah cabai saya ada bercak hitam melingkar membusuk'_\n"
         "2. 📸 *Konsultasi Foto:* Kirim foto daun/buah cabai & padi yang sakit.\n"
-        "3. 📊 *Harga Pasar Harian:* Cek harga acuan cabai, gabah, dan beras se-Indonesia.\n"
-        "   _Contoh: 'Berapa harga cabai rawit merah dan gabah hari ini?'_\n"
+        "3. 📊 *Harga Pasar Harian:* Cek harga acuan cabai & gabah di D.I. Yogyakarta & Magelang.\n"
+        "   _Contoh: 'Berapa harga cabai rawit di Magelang dan lelang Kulon Progo hari ini?'_\n"
         "4. 📋 *Riwayat Konsultasi:* Ketik *'riwayat'* untuk melihat diagnosa sebelumnya.\n"
-        "5. 🌦️ *Prediksi Cuaca & Semprot:* Cek kondisi cuaca & waktu aman semprot.\n"
-        "   _Contoh: 'Bagaimana cuaca di Brebes hari ini, aman semprot?'_\n"
+        "5. 🌦️ *Prediksi Cuaca & Semprot:* Cek kondisi cuaca & waktu aman semprot di DIY & Magelang.\n"
+        "   _Contoh: 'Bagaimana cuaca di Sleman atau Sawangan hari ini, aman semprot?'_\n"
         "6. 🧪 *Rekomendasi Pupuk & Pestisida:* Takaran dosis nutrisi tanaman.\n"
         "   _Contoh: 'Rekomendasi pupuk cabai fase generatif berbuah lebat'_\n\n"
         "Silakan ketik pertanyaan Anda atau kirimkan foto tanaman!"
@@ -390,15 +399,28 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
 
         langkah = diag.get("langkah_penanganan", {})
         photo_info = "\n📸 _(Analisis Berdasarkan Bukti Foto Lapangan)_" if state.get("media_url") else ""
-        ref_image_url = await ConsultationRepository.get_reference_image(diag.get("nama_penyakit", ""))
-        ref_section = f"\n\n📷 *Foto Referensi Pembanding Resmi:*\n{ref_image_url}" if ref_image_url else ""
+        
+        # Ekstrak informasi Visual RAG & OpenCV
+        visual_rag_info = ""
+        if diag.get("visual_match_similarity"):
+            sim_val = diag.get("visual_match_similarity", 0.0)
+            organ_val = (diag.get("cv_organ_detected") or "organ tanaman").capitalize()
+            visual_rag_info = (
+                f"\n🔍 *Analisis Visual Citra (OpenCV + Visual RAG):*\n"
+                f"• Kemiripan Vektor: *{sim_val:.1f}%* terhadap galeri referensi\n"
+                f"• Organ Tanaman: *{organ_val}*\n"
+            )
+
+        ref_image_url = diag.get("visual_reference_url") or await ConsultationRepository.get_reference_image(diag.get("nama_penyakit", ""))
+        ref_section = f"\n\n📷 *Foto Pembanding Referensi (Supabase Storage):*\n{ref_image_url}" if ref_image_url else ""
 
         msg = (
             f"🌿 *HASIL DIAGNOSIS TANAMAN ({diag.get('nama_tanaman', '').upper()})*{photo_info}\n\n"
             f"🎯 *Indikasi:* {diag.get('nama_penyakit')} "
             f"({diag.get('nama_ilmiah') or 'Patogen'})\n"
             f"🔬 *Penyebab:* {diag.get('penyebab_biologis')}\n"
-            f"📊 *Tingkat Keyakinan:* {int(confidence * 100)}%\n\n"
+            f"📊 *Tingkat Keyakinan AI:* {int(confidence * 100)}%\n"
+            f"{visual_rag_info}\n"
             f"📝 *Penjelasan Gejala:*\n{diag.get('penjelasan_singkat')}\n\n"
             f"🛠️ *LANGKAH PENANGANAN PRAKTIS (3 PILAR):*\n"
             f"1. *Fisik / Mekanis:*\n   {langkah.get('mekanis')}\n\n"

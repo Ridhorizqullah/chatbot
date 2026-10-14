@@ -1,0 +1,173 @@
+{
+  "timestamp": "2026-10-14 21:53:57",
+  "latency_benchmark": {
+    "total_trials": 9,
+    "mean_seconds": 3.83,
+    "p50_seconds": 3.309,
+    "p90_seconds": 8.71,
+    "p99_seconds": 8.71,
+    "min_seconds": 1.184,
+    "max_seconds": 8.71,
+    "details": [
+      {
+        "query": "Bagaimana cuaca di Sleman hari ini, aman semprot?",
+        "iteration": 1,
+        "duration_seconds": 4.783,
+        "intent_detected": "weather"
+      },
+      {
+        "query": "Bagaimana cuaca di Sleman hari ini, aman semprot?",
+        "iteration": 2,
+        "duration_seconds": 3.309,
+        "intent_detected": "weather"
+      },
+      {
+        "query": "Bagaimana cuaca di Sleman hari ini, aman semprot?",
+        "iteration": 3,
+        "duration_seconds": 1.184,
+        "intent_detected": "weather"
+      },
+      {
+        "query": "Berapa harga cabai rawit merah di Magelang hari ini?",
+        "iteration": 1,
+        "duration_seconds": 1.91,
+        "intent_detected": "market_price"
+      },
+      {
+        "query": "Berapa harga cabai rawit merah di Magelang hari ini?",
+        "iteration": 2,
+        "duration_seconds": 1.395,
+        "intent_detected": "market_price"
+      },
+      {
+        "query": "Berapa harga cabai rawit merah di Magelang hari ini?",
+        "iteration": 3,
+        "duration_seconds": 1.433,
+        "intent_detected": "market_price"
+      },
+      {
+        "query": "Rekomendasi pupuk cabai fase generatif",
+        "iteration": 1,
+        "duration_seconds": 8.236,
+        "intent_detected": "fertilizer"
+      },
+      {
+        "query": "Rekomendasi pupuk cabai fase generatif",
+        "iteration": 2,
+        "duration_seconds": 8.71,
+        "intent_detected": "fertilizer"
+      },
+      {
+        "query": "Rekomendasi pupuk cabai fase generatif",
+        "iteration": 3,
+        "duration_seconds": 3.511,
+        "intent_detected": "fertilizer"
+      }
+    ]
+  },
+  "bmkg_mapping": {
+    "total_locations": 11,
+    "successful_mappings": 11,
+    "accuracy_rate_percent": 100.0,
+    "details": [
+      {
+        "lokasi_input": "Sleman",
+        "terpetakan_ke": "Sumberharjo, Prambanan, Sleman (BMKG Resmi)",
+        "berhasil_bmkg": true
+      },
+      {
+        "lokasi_input": "Bantul",
+        "terpetakan_ke": "Poncosari, Srandakan, Bantul (BMKG Resmi)",
+        "berhasil_bmkg": true
+      },
+      {
+        "lokasi_input": "Kulon Progo",
+        "terpetakan_ke": "Jangkaran, Temon, Kulon Progo (BMKG Resmi)",
+        "berhasil_bmkg": true
+      },
+      {
+        "lokasi_input": "Wates",
+        "terpetakan_ke": "Jangkaran, Temon, Kulon Progo (BMKG Resmi)",
+        "berhasil_bmkg": true
+      },
+      {
+        "lokasi_input": "Garongan",
+        "terpetakan_ke": "Karangwuni, Wates, Kulon Progo (BMKG Resmi)",
+        "berhasil_bmkg": true
+      },
+      {
+        "lokasi_input": "Kota Yogyakarta",
+        "terpetakan_ke": "Kricak, Tegalrejo, Kota Yogyakarta (BMKG Resmi)",
+        "berhasil_bmkg": true
+      },
+      {
+        "lokasi_input": "Magelang",
+        "terpetakan_ke": "Tanjung, Muntilan, Magelang (BMKG Resmi)",
+        "berhasil_bmkg": true
+      },
+      {
+        "lokasi_input": "Muntilan",
+        "terpetakan_ke": "Tanjung, Muntilan, Magelang (BMKG Resmi)",
+        "berhasil_bmkg": true
+      },
+      {
+        "lokasi_input": "Mertoyudan",
+        "terpetakan_ke": "Deyangan, Mertoyudan, Magelang (BMKG Resmi)",
+        "berhasil_bmkg": true
+      },
+      {
+        "lokasi_input": "Sawangan",
+        "terpetakan_ke": "Tanjung, Muntilan, Magelang (BMKG Resmi)",
+        "berhasil_bmkg": true
+      },
+      {
+        "lokasi_input": "Ngablak",
+        "terpetakan_ke": "Tanjung, Muntilan, Magelang (BMKG Resmi)",
+        "berhasil_bmkg": true
+      }
+    ]
+  },
+  "price_mape": {
+    "total_queries": 6,
+    "mape_percent": 0.67,
+    "is_acceptable": true,
+    "details": [
+      {
+        "query": "cabai rawit di magelang",
+        "harga_faktual_pihps": 60000,
+        "harga_bot": 61200,
+        "selisih_persen": 2.0
+      },
+      {
+        "query": "cabai rawit di jogja",
+        "harga_faktual_pihps": 60000,
+        "harga_bot": 60000,
+        "selisih_persen": 0.0
+      },
+      {
+        "query": "cabai merah keriting di jogja",
+        "harga_faktual_pihps": 40000,
+        "harga_bot": 40000,
+        "selisih_persen": 0.0
+      },
+      {
+        "query": "cabai merah besar di magelang",
+        "harga_faktual_pihps": 32500,
+        "harga_bot": 33150,
+        "selisih_persen": 2.0
+      },
+      {
+        "query": "beras super di jogja",
+        "harga_faktual_pihps": 17150,
+        "harga_bot": 17150,
+        "selisih_persen": 0.0
+      },
+      {
+        "query": "beras medium di magelang",
+        "harga_faktual_pihps": 14800,
+        "harga_bot": 14800,
+        "selisih_persen": 0.0
+      }
+    ]
+  }
+}

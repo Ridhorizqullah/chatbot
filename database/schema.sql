@@ -119,3 +119,57 @@ CREATE TABLE IF NOT EXISTS market_prices (
 
 CREATE INDEX IF NOT EXISTS idx_market_prices_lookup ON market_prices(commodity, province, price_date DESC);
 
+-- 7. Tabel Visual RAG Galeri Foto Referensi Penyakit (Supabase Storage + pgvector)
+CREATE TABLE IF NOT EXISTS disease_image_gallery (
+    id VARCHAR(100) PRIMARY KEY,
+    category VARCHAR(100) NOT NULL,
+    disease_name VARCHAR(150) NOT NULL,
+    scientific_name VARCHAR(150),
+    commodity VARCHAR(50) DEFAULT 'cabai',
+    organ VARCHAR(50) NOT NULL, -- 'buah', 'daun', 'tanaman_utuh'
+    filename VARCHAR(255) NOT NULL,
+    storage_path TEXT NOT NULL,
+    storage_public_url TEXT NOT NULL,
+    embedding VECTOR(768) NOT NULL, -- 768-dim Visual Vector (gemini-embedding-2)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Index IVFFlat untuk pencarian kemiripan visual kosinus instan (<50ms)
+CREATE INDEX IF NOT EXISTS idx_disease_image_embedding 
+ON disease_image_gallery 
+USING ivfflat (embedding vector_cosine_ops) 
+WITH (lists = 10);
+
+-- Fungsi RPC untuk Mencari Foto Penyakit Paling Mirip (Image-to-Image Cosine Search)
+CREATE OR REPLACE FUNCTION match_disease_images (
+    query_image_embedding VECTOR(768),
+    match_threshold FLOAT DEFAULT 0.65,
+    match_count INT DEFAULT 3,
+    filter_organ TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+    id VARCHAR(100),
+    disease_name VARCHAR(150),
+    scientific_name VARCHAR(150),
+    organ VARCHAR(50),
+    storage_public_url TEXT,
+    similarity FLOAT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        g.id,
+        g.disease_name,
+        g.scientific_name,
+        g.organ,
+        g.storage_public_url,
+        1 - (g.embedding <=> query_image_embedding) AS similarity
+    FROM disease_image_gallery g
+    WHERE (filter_organ IS NULL OR LOWER(g.organ) = LOWER(filter_organ))
+      AND (1 - (g.embedding <=> query_image_embedding)) >= match_threshold
+    ORDER BY g.embedding <=> query_image_embedding
+    LIMIT match_count;
+END;
+$$;

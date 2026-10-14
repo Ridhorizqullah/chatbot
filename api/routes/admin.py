@@ -111,9 +111,7 @@ async def delete_market_price(
     }
 
 
-# ==========================================
-# 2. AUDIT KONSULTASI & PPL (FULL CRUD: GET, PATCH, DELETE)
-# ==========================================
+
 
 @router.get("/consultations")
 async def get_consultation_audits(

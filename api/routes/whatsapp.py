@@ -9,6 +9,7 @@ from core.logger import logger
 from graph_builder import tani_graph_app
 from services.whatsapp_service import WhatsAppService
 from core.dedup import message_deduplicator
+from core.latency_tracker import LatencyTracker
 
 router = APIRouter(prefix="/webhook", tags=["WhatsApp Webhook"])
 whatsapp_service = WhatsAppService()
@@ -76,6 +77,7 @@ async def process_incoming_message(
     Background Task: Menjalankan eksekusi LangGraph & mengirimkan balasan WhatsApp.
     Dijalankan di background agar respon HTTP webhook langsung 200 OK (< 200ms) untuk mencegah timeout.
     """
+    tracker = LatencyTracker(message_id=msg_id, phone_number=phone_number)
     try:
         logger.info(f"Memproses pesan dari {phone_number}: '{message_text}' | Media: {media_id} | Session: {session}")
 
@@ -83,7 +85,8 @@ async def process_incoming_message(
         await whatsapp_service.send_seen(to_phone=phone_number, message_id=msg_id, session=session)
         await whatsapp_service.start_typing(to_phone=phone_number, session=session)
 
-        # Jalankan LangGraph StateGraph
+        # Jalankan LangGraph StateGraph dengan tracking latensi
+        tracker.start_phase("pipeline_processing")
         initial_state = {
             "phone_number": phone_number,
             "user_message": message_text or "",
@@ -101,6 +104,7 @@ async def process_incoming_message(
         }
 
         result = await tani_graph_app.ainvoke(initial_state)
+        tracker.end_phase("pipeline_processing")
         final_reply = result.get("final_response", "")
 
         if final_reply:
@@ -108,7 +112,12 @@ async def process_incoming_message(
             if settings.waha_human_delay_seconds > 0:
                 await asyncio.sleep(settings.waha_human_delay_seconds)
 
+            tracker.start_phase("waha_delivery")
             await whatsapp_service.send_text_message(to_phone=phone_number, text=final_reply, session=session)
+            tracker.end_phase("waha_delivery")
+
+        # Catat laporan latensi untuk demonstrasi dan evaluasi
+        tracker.log_summary(has_media=bool(media_id))
 
     except Exception as e:
         logger.error(f"Gagal memproses pesan di background task: {e}", exc_info=True)
