@@ -1,6 +1,6 @@
 import re
 import httpx
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from core.config import settings
 from core.logger import logger
 
@@ -113,6 +113,439 @@ class WhatsAppService:
         except Exception as e:
             logger.error(f"Error koneksi ke Meta Graph API: {e}")
             return False
+
+    async def send_buttons_message(
+        self,
+        to_phone: str,
+        body: str,
+        buttons: List[Dict[str, str]],
+        header: Optional[str] = None,
+        footer: Optional[str] = None,
+        session: Optional[str] = None
+    ) -> bool:
+        """
+        Mengirim pesan Reply Buttons (Tombol Pilihan Cepat) interaktif.
+        Mendukung WAHA (/api/sendButtons) dan Meta WhatsApp Cloud API (interactive button).
+        
+        Format buttons parameter:
+        [
+            {"id": "btn_cabai", "text": "Cabai"},
+            {"id": "btn_padi", "text": "Padi"}
+        ]
+        Maksimal 3-4 tombol. Jika gagal/tidak didukung, otomatis fallback ke pesan teks bernomor.
+        """
+        chat_id = sanitize_chat_id(to_phone)
+        footer_text = footer or "TaniPintar Asisten Pertanian"
+
+        # 1. Implementasi untuk WAHA
+        if settings.whatsapp_provider == "waha":
+            target_session = session or settings.waha_session
+            url = f"{settings.waha_base_url}/api/sendButtons"
+            headers = self._get_waha_headers()
+
+            # Format tombol sesuai skema WAHA (ButtonType: reply)
+            waha_buttons = []
+            for b in buttons[:4]:  # Batasi maks 4 tombol
+                btn_id = b.get("id") or b.get("text", "")
+                btn_text = b.get("text", "")[:20]
+                waha_buttons.append({
+                    "type": "reply",
+                    "text": btn_text,
+                    "id": btn_id
+                })
+
+            payload: Dict[str, Any] = {
+                "session": target_session,
+                "chatId": chat_id,
+                "body": body,
+                "footer": footer_text,
+                "buttons": waha_buttons
+            }
+            if header:
+                payload["header"] = header
+
+            try:
+                async with httpx.AsyncClient(timeout=20.0) as client:
+                    res = await client.post(url, json=payload, headers=headers)
+                    if res.status_code in [200, 201]:
+                        logger.info(f"[WAHA] Reply Buttons berhasil dikirim ke {chat_id}")
+                        return True
+                    else:
+                        logger.warning(f"[WAHA] Gagal kirim Buttons (status {res.status_code}): {res.text}. Melakukan fallback ke teks biasa...")
+            except Exception as e:
+                logger.warning(f"[WAHA] Exception kirim buttons ke {chat_id}: {e}. Fallback ke teks biasa.")
+
+        # 2. Implementasi untuk Meta WhatsApp Cloud API
+        elif self.access_token and self.phone_number_id:
+            meta_recipient = chat_id.replace("@c.us", "").replace("@s.whatsapp.net", "")
+            url = f"{self.base_url}/{self.phone_number_id}/messages"
+            headers = {
+                "Authorization": f"Bearer {self.access_token}",
+                "Content-Type": "application/json"
+            }
+            meta_buttons = []
+            for b in buttons[:3]:  # Meta membatasi maks 3 tombol quick reply
+                btn_id = b.get("id") or b.get("text", "")
+                btn_text = b.get("text", "")[:20]
+                meta_buttons.append({
+                    "type": "reply",
+                    "reply": {
+                        "id": btn_id,
+                        "title": btn_text
+                    }
+                })
+
+            interactive_payload: Dict[str, Any] = {
+                "type": "button",
+                "body": {"text": body},
+                "footer": {"text": footer_text},
+                "action": {"buttons": meta_buttons}
+            }
+            if header:
+                interactive_payload["header"] = {"type": "text", "text": header}
+
+            payload = {
+                "messaging_product": "whatsapp",
+                "recipient_type": "individual",
+                "to": meta_recipient,
+                "type": "interactive",
+                "interactive": interactive_payload
+            }
+            try:
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    res = await client.post(url, headers=headers, json=payload)
+                    if res.status_code in [200, 201]:
+                        logger.info(f"[Meta] Reply Buttons berhasil dikirim ke {meta_recipient}")
+                        return True
+                    else:
+                        logger.warning(f"[Meta] Gagal kirim interactive buttons: {res.text}. Fallback ke teks...")
+            except Exception as e:
+                logger.warning(f"[Meta] Exception interactive buttons: {e}. Fallback ke teks...")
+
+        # 3. Fallback Elegan: Teks Bernomor jika interactive buttons tidak didukung
+        options_text = "\n".join([f"👉 *{i+1}.* {b.get('text')}" for i, b in enumerate(buttons)])
+        fallback_msg = f"{header + chr(10) + chr(10) if header else ''}{body}\n\n*Pilihan Cepat:*\n{options_text}\n\n_{footer_text}_"
+        return await self.send_text_message(to_phone=to_phone, text=fallback_msg, session=session)
+
+    async def send_list_message(
+        self,
+        to_phone: str,
+        title: str,
+        description: str,
+        button_text: str,
+        sections: List[Dict[str, Any]],
+        footer: Optional[str] = None,
+        session: Optional[str] = None
+    ) -> bool:
+        """
+        Mengirim pesan List Message (Menu Daftar) interaktif dengan kategori (Sections) dan baris pilihan (Rows).
+        Mendukung WAHA (/api/sendList) dan Meta WhatsApp Cloud API (interactive list).
+        
+        Format sections:
+        [
+            {
+                "title": "Konsultasi Tanaman",
+                "rows": [
+                    {"rowId": "menu_cabai", "title": "Cabai", "description": "Diagnosa tanaman cabai"},
+                    {"rowId": "menu_padi", "title": "Padi", "description": "Diagnosa tanaman padi"}
+                ]
+            }
+        ]
+        """
+        chat_id = sanitize_chat_id(to_phone)
+        footer_text = footer or "TaniPintar Asisten Pertanian"
+
+        # 1. Implementasi untuk WAHA
+        if settings.whatsapp_provider == "waha":
+            target_session = session or settings.waha_session
+            url = f"{settings.waha_base_url}/api/sendList"
+            headers = self._get_waha_headers()
+
+            payload = {
+                "session": target_session,
+                "chatId": chat_id,
+                "message": {
+                    "title": title,
+                    "description": description,
+                    "button": button_text[:20],
+                    "footer": footer_text,
+                    "sections": sections
+                }
+            }
+
+            try:
+                async with httpx.AsyncClient(timeout=20.0) as client:
+                    res = await client.post(url, json=payload, headers=headers)
+                    if res.status_code in [200, 201]:
+                        logger.info(f"[WAHA] List Message berhasil dikirim ke {chat_id}")
+                        return True
+                    else:
+                        logger.warning(f"[WAHA] Gagal kirim List Message (status {res.status_code}): {res.text}. Fallback ke format teks...")
+            except Exception as e:
+                logger.warning(f"[WAHA] Exception sendList ke {chat_id}: {e}. Fallback ke format teks.")
+
+        # 2. Implementasi untuk Meta WhatsApp Cloud API
+        elif self.access_token and self.phone_number_id:
+            meta_recipient = chat_id.replace("@c.us", "").replace("@s.whatsapp.net", "")
+            url = f"{self.base_url}/{self.phone_number_id}/messages"
+            headers = {
+                "Authorization": f"Bearer {self.access_token}",
+                "Content-Type": "application/json"
+            }
+
+            # Sesuaikan format rows Meta: rowId -> id
+            meta_sections = []
+            for sec in sections:
+                meta_rows = []
+                for r in sec.get("rows", []):
+                    row_dict = {
+                        "id": r.get("rowId") or r.get("id", ""),
+                        "title": r.get("title", "")[:24]
+                    }
+                    if r.get("description"):
+                        row_dict["description"] = r.get("description", "")[:72]
+                    meta_rows.append(row_dict)
+                meta_sections.append({
+                    "title": sec.get("title", "")[:24],
+                    "rows": meta_rows
+                })
+
+            payload = {
+                "messaging_product": "whatsapp",
+                "recipient_type": "individual",
+                "to": meta_recipient,
+                "type": "interactive",
+                "interactive": {
+                    "type": "list",
+                    "header": {"type": "text", "text": title[:60]},
+                    "body": {"text": description},
+                    "footer": {"text": footer_text[:60]},
+                    "action": {
+                        "button": button_text[:20],
+                        "sections": meta_sections
+                    }
+                }
+            }
+            try:
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    res = await client.post(url, headers=headers, json=payload)
+                    if res.status_code in [200, 201]:
+                        logger.info(f"[Meta] List Message berhasil dikirim ke {meta_recipient}")
+                        return True
+                    else:
+                        logger.warning(f"[Meta] Gagal kirim interactive list: {res.text}. Fallback ke teks...")
+            except Exception as e:
+                logger.warning(f"[Meta] Exception interactive list: {e}. Fallback ke teks...")
+
+        # 3. Fallback Elegan: Teks Terstruktur dengan Nomor Menu
+        text_lines = [f"📋 *{title}*", f"{description}\n"]
+        counter = 1
+        for sec in sections:
+            text_lines.append(f"📌 *{sec.get('title', 'Menu')}:*")
+            for r in sec.get("rows", []):
+                desc_str = f" - _{r.get('description')}_" if r.get('description') else ""
+                text_lines.append(f"  *{counter}.* {r.get('title')}{desc_str}")
+                counter += 1
+            text_lines.append("")
+        text_lines.append(f"_{footer_text}_")
+        fallback_msg = "\n".join(text_lines)
+        return await self.send_text_message(to_phone=to_phone, text=fallback_msg, session=session)
+
+    async def send_poll_message(
+        self,
+        to_phone: str,
+        question: str,
+        options: List[str],
+        multiple_answers: bool = False,
+        session: Optional[str] = None
+    ) -> bool:
+        """
+        Mengirim pesan Poll WhatsApp via WAHA (/api/sendPoll) sebagai alternatif interaktif paling tangguh.
+        Sangat direkomendasikan pada engine GOWS/NOWEB karena bekerja konsisten di seluruh versi WhatsApp.
+        """
+        chat_id = sanitize_chat_id(to_phone)
+        if settings.whatsapp_provider == "waha":
+            target_session = session or settings.waha_session
+            url = f"{settings.waha_base_url}/api/sendPoll"
+            headers = self._get_waha_headers()
+            payload = {
+                "session": target_session,
+                "chatId": chat_id,
+                "poll": {
+                    "name": question,
+                    "options": options[:12],
+                    "multipleAnswers": multiple_answers
+                }
+            }
+            try:
+                async with httpx.AsyncClient(timeout=20.0) as client:
+                    res = await client.post(url, json=payload, headers=headers)
+                    if res.status_code in [200, 201]:
+                        logger.info(f"[WAHA] Poll berhasil dikirim ke {chat_id}")
+                        return True
+                    else:
+                        logger.warning(f"[WAHA] Gagal kirim Poll: {res.text}")
+            except Exception as e:
+                logger.error(f"[WAHA] Error kirim poll ke {chat_id}: {e}")
+
+        # Fallback ke format teks pilihan jika provider bukan WAHA atau polling gagal
+        options_text = "\n".join([f"🔘 {opt}" for opt in options])
+        fallback_msg = f"📊 *{question}*\n\n{options_text}\n\n_Ketik salah satu pilihan di atas untuk menjawab._"
+        return await self.send_text_message(to_phone=to_phone, text=fallback_msg, session=session)
+
+    async def send_main_menu_list(self, to_phone: str, session: Optional[str] = None) -> bool:
+        """
+        Helper spesifik TaniPintar: Mengirimkan List Message Menu Utama untuk 6 Layanan Pertanian.
+        """
+        sections = [
+            {
+                "title": "🔍 Diagnosa Hama & Penyakit",
+                "rows": [
+                    {
+                        "rowId": "menu_foto",
+                        "title": "📸 Konsultasi Foto",
+                        "description": "Kirim foto daun/buah cabai atau padi yang sakit"
+                    },
+                    {
+                        "rowId": "menu_cabai",
+                        "title": "🌶️ Konsultasi Cabai",
+                        "description": "Tanya gejala antraknosa, layu fusarium, virus kuning, dll"
+                    },
+                    {
+                        "rowId": "menu_padi",
+                        "title": "🌾 Konsultasi Padi",
+                        "description": "Tanya gejala wereng, blast, hawar daun, penggerek, dll"
+                    }
+                ]
+            },
+            {
+                "title": "📊 Info Pasar & Cuaca",
+                "rows": [
+                    {
+                        "rowId": "menu_harga",
+                        "title": "Harga Pasar Harian",
+                        "description": "Cek harga cabai rawit & gabah di Muntilan & DIY"
+                    },
+                    {
+                        "rowId": "menu_cuaca",
+                        "title": "Prediksi Cuaca & Semprot",
+                        "description": "Cek perkiraan hujan & waktu aman penyemprotan"
+                    }
+                ]
+            },
+            {
+                "title": "🧪 Nutrisi & Riwayat",
+                "rows": [
+                    {
+                        "rowId": "menu_pupuk",
+                        "title": "Kalkulator Pupuk & Obat",
+                        "description": "Dosis anjuran NPK, Urea, fungisida & insektisida"
+                    },
+                    {
+                        "rowId": "menu_riwayat",
+                        "title": "Riwayat Konsultasi",
+                        "description": "Lihat rekam jejak diagnosa tanaman Anda"
+                    }
+                ]
+            }
+        ]
+
+        return await self.send_list_message(
+            to_phone=to_phone,
+            title="🌾 Menu Layanan TaniPintar",
+            description="Halo Petani Hebat! Pilih menu layanan yang Anda butuhkan di bawah ini:",
+            button_text="Buka Menu Layanan",
+            sections=sections,
+            footer="TaniPintar • Sahabat Petani Cerdas",
+            session=session
+        )
+
+    async def send_main_menu_buttons(self, to_phone: str, session: Optional[str] = None) -> bool:
+        """
+        Mengirimkan Menu Utama berbasis Tombol (Interactive Buttons) sesuai instruksi pengguna:
+        - [ 🔬 Tanya Penyakit ]
+        - [ 📷 Konsultasi Foto ]
+        - [ 💰 Cek Harga Pasar ]
+        - [ 🌦️ Info Cuaca & Semprot ]
+        """
+        buttons = [
+            {"id": "btn_tanya_penyakit", "text": "🔬 Tanya Penyakit"},
+            {"id": "btn_konsultasi_foto", "text": "📷 Konsultasi Foto"},
+            {"id": "btn_cek_harga", "text": "💰 Cek Harga Pasar"},
+            {"id": "btn_info_cuaca", "text": "🌦️ Info Cuaca"}
+        ]
+        body = (
+            "🌿 *Selamat Datang di TaniPintar Bot!*\n"
+            "Asisten Sahabat Petani Cerdas untuk Perlindungan Tanaman Cabai & Padi.\n\n"
+            "Silakan pilih menu layanan di bawah ini atau ketik pertanyaan Anda:"
+        )
+        return await self.send_buttons_message(
+            to_phone=to_phone,
+            body=body,
+            buttons=buttons,
+            header="🌾 TaniPintar Menu Utama",
+            footer="TaniPintar • Sahabat Petani Cerdas",
+            session=session
+        )
+
+    async def send_price_commodity_buttons(self, to_phone: str, session: Optional[str] = None) -> bool:
+        """
+        Mengirimkan tombol interaktif untuk mengarahkan petani memilih komoditas dan wilayah cek harga pasar.
+        """
+        buttons = [
+            {"id": "btn_harga_cabai", "text": "🌶️ Cabai Rawit"},
+            {"id": "btn_harga_padi", "text": "🌾 Gabah / Padi"},
+            {"id": "btn_menu_utama", "text": "📋 Menu Utama"}
+        ]
+        return await self.send_buttons_message(
+            to_phone=to_phone,
+            body="💰 *PILIHAN KOMODITAS HARGA PASAR*\n\nSilakan pilih komoditas yang ingin Anda cek harga acuannya di D.I. Yogyakarta & Magelang:",
+            buttons=buttons,
+            header="📊 Info Harga Pasar",
+            footer="TaniPintar • Data Pasar Harian",
+            session=session
+        )
+
+    async def send_quick_action_buttons(
+        self,
+        to_phone: str,
+        body_text: str,
+        context: str = "diagnosis",
+        session: Optional[str] = None
+    ) -> bool:
+        """
+        Helper spesifik TaniPintar: Mengirimkan Reply Buttons (Tombol Pilihan Cepat) tindak lanjut.
+        """
+        if context == "diagnosis":
+            buttons = [
+                {"id": "btn_pupuk", "text": "🧪 Dosis Pupuk & Obat"},
+                {"id": "btn_cuaca", "text": "🌦️ Waktu Aman Semprot"},
+                {"id": "btn_menu", "text": "📋 Menu Utama"}
+            ]
+            header = "💡 Tindak Lanjut Diagnosa"
+        elif context == "price":
+            buttons = [
+                {"id": "btn_cabai", "text": "🌶️ Cek Penyakit Cabai"},
+                {"id": "btn_padi", "text": "🌾 Cek Penyakit Padi"},
+                {"id": "btn_menu", "text": "📋 Menu Utama"}
+            ]
+            header = "📊 Pilihan Layanan Lain"
+        else:
+            buttons = [
+                {"id": "btn_cabai", "text": "🌶️ Cabai"},
+                {"id": "btn_padi", "text": "🌾 Padi"},
+                {"id": "btn_menu", "text": "📋 Menu Utama"}
+            ]
+            header = "🌾 TaniPintar Bot"
+
+        return await self.send_buttons_message(
+            to_phone=to_phone,
+            body=body_text,
+            buttons=buttons,
+            header=header,
+            footer="TaniPintar • Tekan salah satu tombol di bawah",
+            session=session
+        )
 
     async def start_typing(self, to_phone: str, session: Optional[str] = None) -> bool:
         """Menampilkan animasi 'sedang mengetik...' (typing presence) di WhatsApp petani."""

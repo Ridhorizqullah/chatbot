@@ -68,10 +68,6 @@ async def router_node(state: TaniState) -> Dict[str, Any]:
             logger.debug(f"Gagal cek status sesi pertama kali: {e}")
             is_first_time = False
 
-    # 2. Fitur 2: Konsultasi Foto (Multimodal Vision)
-    if media_id:
-        return {"intent": "vision_diagnosis", "is_first_interaction": is_first_time}
-
     # Deteksi konteks tanaman (Cabai vs Padi)
     detected_crop = None
     if "cabai" in msg or "cabe" in msg:
@@ -79,19 +75,54 @@ async def router_node(state: TaniState) -> Dict[str, Any]:
     elif "padi" in msg or "gabah" in msg or "sawah" in msg or "beras" in msg:
         detected_crop = "padi"
 
+    # 2. Fitur 2: Konsultasi Foto (Multimodal Vision saat media foto diterima)
+    if media_id:
+        return {"intent": "vision_diagnosis", "is_first_interaction": is_first_time}
+
+    # 2b. Konsultasi Foto (Instruksi Pengiriman Foto saat media belum dilampirkan)
+    photo_intent_keywords = [
+        "konsultasi foto", "cek foto", "kirim foto", "analisis foto", "diagnosa foto",
+        "foto tanaman", "foto daun", "foto buah", "foto penyakit", "foto sakit",
+        "mau kirim foto", "bisa kirim foto", "bisa cek foto", "periksa foto",
+        "menu_foto", "btn_foto", "btn_konsultasi_foto"
+    ]
+    if any(k in clean_msg for k in photo_intent_keywords) or clean_msg in ["foto", "kirim gambar", "upload foto"]:
+        return {"intent": "photo_instruction", "crop_context": detected_crop, "is_first_interaction": is_first_time}
+
+    # 2c. Tanya Penyakit Teks (Prompt menceritakan gejala jika belum ada keluhan)
+    disease_prompt_keywords = [
+        "tanya penyakit", "konsultasi teks", "konsultasi penyakit", "tanya hama",
+        "cek penyakit", "btn_tanya_penyakit", "menu_tanya_penyakit"
+    ]
+    if any(clean_msg == k or clean_msg.startswith(f"{k} ") for k in disease_prompt_keywords):
+        return {"intent": "disease_text_prompt", "crop_context": detected_crop, "is_first_interaction": is_first_time}
+
     # 3. Fitur 4: Riwayat Konsultasi
     history_keywords = ["riwayat", "histori", "rekam jejak", "konsultasi lalu", "konsultasi saya", "riwayat penyakit"]
     if any(k in msg for k in history_keywords):
         return {"intent": "history", "crop_context": detected_crop, "is_first_interaction": is_first_time}
 
-    # 4. Fitur 5: Prediksi Cuaca Pertanian
+    # 4. Fitur 5: Prediksi Cuaca Pertanian (Prompt Lokasi vs Langsung Data)
     weather_keywords = ["cuaca", "hujan", "mendung", "suhu", "angin", "prakiraan", "kapan nyemprot", "kelembapan", "gerimis"]
-    if any(k in msg for k in weather_keywords):
+    location_keywords = [
+        "sleman", "bantul", "kulon progo", "gunungkidul", "jogja", "yogyakarta",
+        "magelang", "muntilan", "sawangan", "mertoyudan", "borobudur", "srumbung",
+        "ngablak", "tempel", "turi", "pakem", "ngaglik", "kalasan", "prambanan",
+        "sedayu", "pandak", "kretek", "kasihan", "sewon", "sentolo", "pengasih"
+    ]
+    has_location = any(loc in msg for loc in location_keywords)
+    if any(k in msg for k in weather_keywords) or "btn_info_cuaca" in clean_msg:
+        # Jika belum ada lokasi dan inputnya singkat (contoh tombol 'Info Cuaca') -> minta lokasi/desa
+        if not has_location and (clean_msg in ["cuaca", "info cuaca", "cek cuaca", "cuaca hari ini", "prakiraan cuaca", "btn_info_cuaca"] or len(clean_msg.split()) <= 3):
+            return {"intent": "weather_prompt", "crop_context": detected_crop, "is_first_interaction": is_first_time}
         return {"intent": "weather", "crop_context": detected_crop, "is_first_interaction": is_first_time}
 
-    # 5. Fitur 3: Harga Pasar Padi dan Cabai (Otomatis & Admin)
+    # 5. Fitur 3: Harga Pasar Padi dan Cabai (Prompt Komoditas vs Langsung Data)
     price_keywords = ["harga", "pasar", "sekilo", "per kilo", "jual", "tengkulak", "gkp", "gabah", "beras", "biaya"]
-    if any(k in msg for k in price_keywords):
+    if any(k in msg for k in price_keywords) or "btn_cek_harga" in clean_msg:
+        # Jika belum ada komoditas cabai/padi dan inputnya singkat -> arahkan pilihan komoditas
+        if not detected_crop and (clean_msg in ["harga", "cek harga", "harga pasar", "cek harga pasar", "btn_cek_harga"] or len(clean_msg.split()) <= 3):
+            return {"intent": "price_prompt", "crop_context": None, "is_first_interaction": is_first_time}
         return {"intent": "market_price", "crop_context": detected_crop, "is_first_interaction": is_first_time}
 
     # 6. Fitur 6: Rekomendasi Pestisida & Pupuk Spesifik
@@ -272,24 +303,65 @@ async def fertilizer_node(state: TaniState) -> Dict[str, Any]:
 
 
 async def greeting_node(state: TaniState) -> Dict[str, Any]:
-    """Menampilkan panduan 6 Layanan Lengkap MVP TaniPintar."""
+    """Pesan perkenalan (chat introduction) ringkas, ramah, dan membumi untuk menyambut petani."""
     welcome_text = (
-        "🌾 *Selamat Datang di TaniPintar Bot!*\n"
+        "🌿 *Selamat Datang di TaniPintar Bot!*\n"
         "Asisten Sahabat Petani Cerdas untuk Perlindungan Tanaman Cabai & Padi.\n\n"
-        "💡 *6 Layanan Utama yang Dapat Anda Gunakan:*\n"
-        "1. 🔬 *Konsultasi Penyakit Teks:* Tanya gejala 11 penyakit cabai & padi.\n"
-        "   _Contoh: 'Buah cabai saya ada bercak hitam melingkar membusuk'_\n"
-        "2. 📸 *Konsultasi Foto:* Kirim foto daun/buah cabai & padi yang sakit.\n"
-        "3. 📊 *Harga Pasar Harian:* Cek harga acuan cabai & gabah di D.I. Yogyakarta & Magelang.\n"
-        "   _Contoh: 'Berapa harga cabai rawit di Magelang dan lelang Kulon Progo hari ini?'_\n"
-        "4. 📋 *Riwayat Konsultasi:* Ketik *'riwayat'* untuk melihat diagnosa sebelumnya.\n"
-        "5. 🌦️ *Prediksi Cuaca & Semprot:* Cek kondisi cuaca & waktu aman semprot di DIY & Magelang.\n"
-        "   _Contoh: 'Bagaimana cuaca di Sleman atau Sawangan hari ini, aman semprot?'_\n"
-        "6. 🧪 *Rekomendasi Pupuk & Pestisida:* Takaran dosis nutrisi tanaman.\n"
-        "   _Contoh: 'Rekomendasi pupuk cabai fase generatif berbuah lebat'_\n\n"
-        "Silakan ketik pertanyaan Anda atau kirimkan foto tanaman!"
+        "Silakan pilih menu layanan di bawah ini atau ketik pertanyaan Anda:"
     )
     return {"final_response": welcome_text}
+
+
+async def photo_instruction_node(state: TaniState) -> Dict[str, Any]:
+    """Instruksi bagi petani untuk mengirimkan foto tanaman sakit sebelum dianalisis."""
+    instruction_text = (
+        "📸 *KONSULTASI FOTO TANAMAN (CABAI & PADI)*\n\n"
+        "Silakan kirimkan foto daun atau buah tanaman cabai/padi yang sakit. Pastikan foto tidak buram agar bisa saya analisis dengan akurat.\n\n"
+        "💡 *Tips Pengambilan Foto:*\n"
+        "1. 🔍 *Jarak Dekat:* Fokuskan kamera langsung pada gejala bercak, hama, atau busuk.\n"
+        "2. ☀️ *Pencahayaan Baik:* Ambil foto di tempat yang terang dan jelas.\n"
+        "3. 📝 *Keterangan (Opsional):* Tambahkan cerita singkat keluhan pada caption foto.\n\n"
+        "_Kamera Anda siap? Kirimkan fotonya sekarang ya!_ 🌾"
+    )
+    return {"final_response": instruction_text}
+
+
+async def disease_text_prompt_node(state: TaniState) -> Dict[str, Any]:
+    """Meminta petani menceritakan gejala penyakit dengan bahasa sehari-hari."""
+    prompt_text = (
+        "🔬 *KONSULTASI HAMA & PENYAKIT (TEKS)*\n\n"
+        "Silakan ceritakan gejala apa yang terlihat pada tanaman Cabai atau Padi Anda menggunakan bahasa sehari-hari.\n\n"
+        "📌 *Contoh cerita gejala:*\n"
+        "• _'Buah cabai rawit saya ada bercak hitam melingkar membusuk dan rontok'_\n"
+        "• _'Daun padi menguning kecoklatan seperti terbakar dari ujung helai'_\n"
+        "• _'Banyak kutu putih di balik daun dan daun cabai menggulung keriting'_\n\n"
+        "Apa keluhan yang sedang dialami tanaman Anda saat ini? Ceritakan di sini ya! 🌾"
+    )
+    return {"final_response": prompt_text}
+
+
+async def price_prompt_node(state: TaniState) -> Dict[str, Any]:
+    """Mengarahkan petani memilih komoditas untuk cek harga pasar."""
+    prompt_text = (
+        "💰 *INFORMASI HARGA PASAR HARIAN*\n\n"
+        "Saya menyediakan data acuan harga tingkat petani (kebun) dan harga pasar di wilayah D.I. Yogyakarta & Magelang.\n\n"
+        "Silakan pilih komoditas yang ingin Anda cek melalui tombol di bawah, atau ketik langsung misalnya: _'Harga cabai rawit hari ini'_."
+    )
+    return {"final_response": prompt_text}
+
+
+async def weather_prompt_node(state: TaniState) -> Dict[str, Any]:
+    """Menanyakan lokasi/desa user untuk menarik data cuaca spesifik tingkat desa/kecamatan."""
+    prompt_text = (
+        "🌦️ *PREDIKSI CUACA & WAKTU AMAN SEMPROT*\n\n"
+        "Bisa sebutkan lokasi sawah, desa, atau kecamatan Anda?\n\n"
+        "📌 *Contoh:* _Sleman_, _Bantul_, _Kulon Progo_, _Muntilan_, atau _Sawangan_.\n\n"
+        "Saya akan memeriksa prakiraan cuaca, potensi hujan, suhu, dan rekomendasi jam terbaik untuk penyemprotan pestisida hari ini."
+    )
+    return {"final_response": prompt_text}
+
+
+FOOTER_MENU_HINT = "\n\n💡 Ketik *'menu'* kapan saja jika ingin kembali ke halaman utama."
 
 
 async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
@@ -297,14 +369,14 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
     if state.get("final_response"):
         return {}
 
-    # Sisipkan banner selamat datang jika ini adalah percakapan pertama kali pengguna (bukan greeting)
+    # Sisipkan banner selamat datang jika ini adalah percakapan pertama kali pengguna (bukan greeting/prompt interaktif)
     is_first = state.get("is_first_interaction", False)
     welcome_banner = ""
-    if is_first and state.get("intent") != "greeting":
+    interactive_intents = ["greeting", "photo_instruction", "disease_text_prompt", "price_prompt", "weather_prompt"]
+    if is_first and state.get("intent") not in interactive_intents:
         welcome_banner = (
-            "🌾 *Selamat Datang di TaniPintar Bot!*\n"
-            "_Asisten Sahabat Petani Cerdas untuk Perlindungan Tanaman Cabai & Padi._\n"
-            "━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "🌾 *TaniPintar* — Sahabat Petani Cabai & Padi\n"
+            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
         )
 
     # 1. Output Fitur 4: Riwayat Konsultasi
@@ -316,7 +388,7 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
                 "Belum ditemukan riwayat konsultasi untuk nomor WhatsApp ini.\n"
                 "Silakan konsultasikan gejala tanaman Cabai atau Padi Anda melalui teks atau foto!"
             )
-            return {"final_response": welcome_banner + msg}
+            return {"final_response": welcome_banner + msg + FOOTER_MENU_HINT}
 
         lines = ["📋 *REKAM JEJAK KONSULTASI ANDA:*\n"]
         for idx, item in enumerate(hist, 1):
@@ -331,7 +403,7 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
                 f"   📅 Tanggal: {date_str} | Status: {status_ppl}\n"
             )
         lines.append("ℹ️ _Ketik pertanyaan baru untuk melakukan konsultasi tanaman lanjutan._")
-        return {"final_response": welcome_banner + "\n".join(lines)}
+        return {"final_response": welcome_banner + "\n".join(lines) + FOOTER_MENU_HINT}
 
     # 2. Output Fitur 5: Prediksi Cuaca
     weather = state.get("weather_result")
@@ -345,7 +417,7 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
             f"🚜 *Saran Aplikasi Penyemprotan:*\n{weather.get('advisory_penyemprotan')}\n\n"
             f"🌱 *Saran Pemupukan:*\n{weather.get('advisory_pemupukan')}"
         )
-        return {"final_response": welcome_banner + msg}
+        return {"final_response": welcome_banner + msg + FOOTER_MENU_HINT}
 
     # 3. Output Fitur 6: Rekomendasi Pupuk & Obat Spesifik
     fert = state.get("fertilizer_result")
@@ -360,7 +432,7 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
             f"{pest}\n\n"
             f"⚙️ *Petunjuk Waktu & Cara Aplikasi:*\n{fert.get('catatan_aplikasi')}"
         )
-        return {"final_response": welcome_banner + msg}
+        return {"final_response": welcome_banner + msg + FOOTER_MENU_HINT}
 
     # 4. Output Fitur 3: Harga Pasar
     price = state.get("price_result")
@@ -380,7 +452,7 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
             f"ℹ️ *Sumber:* {price.get('sumber', '')}\n"
             f"📝 *Catatan:* {price.get('catatan_pasar', '')}"
         )
-        return {"final_response": welcome_banner + msg}
+        return {"final_response": welcome_banner + msg + FOOTER_MENU_HINT}
 
     # 5. Output Fitur 1 & 2: Diagnosis Teks atau Foto
     diag = state.get("diagnosis_result")
@@ -395,7 +467,7 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
         # GUARDRAIL AMBANG BATAS KEYAKINAN (< 0.70)
         if confidence < settings.confidence_threshold or rujuk_ppl:
             logger.info(f"Guardrail aktif: Confidence {confidence} < {settings.confidence_threshold}")
-            return {"final_response": welcome_banner + SAFE_FALLBACK_MESSAGE}
+            return {"final_response": welcome_banner + SAFE_FALLBACK_MESSAGE + FOOTER_MENU_HINT}
 
         langkah = diag.get("langkah_penanganan", {})
         photo_info = "\n📸 _(Analisis Berdasarkan Bukti Foto Lapangan)_" if state.get("media_url") else ""
@@ -430,9 +502,9 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
             f"{ref_section}\n\n"
             f"_Apabila gejala tidak membaik dalam 3-5 hari, segera hubungi PPL setempat._"
         )
-        return {"final_response": welcome_banner + msg}
+        return {"final_response": welcome_banner + msg + FOOTER_MENU_HINT}
 
-    return {"final_response": welcome_banner + SAFE_FALLBACK_MESSAGE}
+    return {"final_response": welcome_banner + SAFE_FALLBACK_MESSAGE + FOOTER_MENU_HINT}
 
 
 async def audit_saver_node(state: TaniState) -> Dict[str, Any]:
@@ -452,10 +524,23 @@ async def audit_saver_node(state: TaniState) -> Dict[str, Any]:
             bot_recommendation=diag
         )
 
-    # Simpan status sesi percakapan & tandai telah disambut
+    # Simpan status sesi percakapan dengan current_state posisi menu & timestamp updated_at
+    intent = state.get("intent", "main_menu")
+    step_map = {
+        "photo_instruction": "waiting_for_photo",
+        "greeting": "main_menu",
+        "diagnosis": "consultation_completed",
+        "vision_diagnosis": "consultation_completed",
+        "market_price": "price_view",
+        "weather": "weather_view",
+        "fertilizer": "fertilizer_view",
+        "history": "history_view"
+    }
+    current_step = step_map.get(intent, f"in_{intent}")
+
     await ConsultationRepository.upsert_session(
         phone_number=phone,
-        current_state={"last_intent": state.get("intent"), "has_greeted": True},
+        current_state={"step": current_step, "last_intent": intent, "has_greeted": True},
         last_crop_context=state.get("crop_context")
     )
     return {}
@@ -466,7 +551,7 @@ async def audit_saver_node(state: TaniState) -> Dict[str, Any]:
 # ==========================================
 
 def route_intent(state: TaniState) -> str:
-    """Fungsi conditional routing LangGraph untuk 6 Layanan MVP."""
+    """Fungsi conditional routing LangGraph untuk layanan TaniPintar."""
     intent = state.get("intent")
     if intent == "vision_diagnosis":
         return "vision"
@@ -480,12 +565,20 @@ def route_intent(state: TaniState) -> str:
         return "fertilizer"
     elif intent == "greeting":
         return "greeting"
+    elif intent == "photo_instruction":
+        return "photo_instruction"
+    elif intent == "disease_text_prompt":
+        return "disease_text_prompt"
+    elif intent == "price_prompt":
+        return "price_prompt"
+    elif intent == "weather_prompt":
+        return "weather_prompt"
     else:
         return "diagnosis"
 
 
 def build_tani_graph():
-    """Membangun StateGraph LangGraph lengkap untuk 6 Fitur MVP."""
+    """Membangun StateGraph LangGraph lengkap untuk Fitur TaniPintar."""
     workflow = StateGraph(TaniState)
 
     # Daftarkan Seluruh Node Layanan
@@ -497,13 +590,17 @@ def build_tani_graph():
     workflow.add_node("weather", weather_node)
     workflow.add_node("fertilizer", fertilizer_node)
     workflow.add_node("greeting", greeting_node)
+    workflow.add_node("photo_instruction", photo_instruction_node)
+    workflow.add_node("disease_text_prompt", disease_text_prompt_node)
+    workflow.add_node("price_prompt", price_prompt_node)
+    workflow.add_node("weather_prompt", weather_prompt_node)
     workflow.add_node("formatter", format_and_guardrail_node)
     workflow.add_node("audit_saver", audit_saver_node)
 
     # Entrypoint
     workflow.set_entry_point("router")
 
-    # Conditional Edges dari Router ke 6 Node Layanan
+    # Conditional Edges dari Router ke Seluruh Node Layanan
     workflow.add_conditional_edges(
         "router",
         route_intent,
@@ -515,6 +612,10 @@ def build_tani_graph():
             "weather": "weather",
             "fertilizer": "fertilizer",
             "greeting": "greeting",
+            "photo_instruction": "photo_instruction",
+            "disease_text_prompt": "disease_text_prompt",
+            "price_prompt": "price_prompt",
+            "weather_prompt": "weather_prompt",
         }
     )
 
@@ -526,6 +627,10 @@ def build_tani_graph():
     workflow.add_edge("weather", "formatter")
     workflow.add_edge("fertilizer", "formatter")
     workflow.add_edge("greeting", "formatter")
+    workflow.add_edge("photo_instruction", "formatter")
+    workflow.add_edge("disease_text_prompt", "formatter")
+    workflow.add_edge("price_prompt", "formatter")
+    workflow.add_edge("weather_prompt", "formatter")
 
     # Formatter lanjut ke audit saver lalu END
     workflow.add_edge("formatter", "audit_saver")

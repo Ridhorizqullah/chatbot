@@ -72,10 +72,18 @@ BEGIN
 END;
 $$;
 
--- 4. Tabel Sesi Percakapan Petani (LangGraph Memory Persistence)
+-- 4. Tabel Manajemen Sesi Pengguna & State Menu (user_sessions)
+CREATE TABLE IF NOT EXISTS user_sessions (
+    phone_number VARCHAR(30) PRIMARY KEY,
+    current_state JSONB DEFAULT '{"step": "main_menu"}'::jsonb NOT NULL,
+    last_crop_context VARCHAR(50),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Kompatibilitas alias untuk instalasi chat_sessions
 CREATE TABLE IF NOT EXISTS chat_sessions (
     phone_number VARCHAR(30) PRIMARY KEY,
-    current_state JSONB DEFAULT '{}'::jsonb,
+    current_state JSONB DEFAULT '{"step": "main_menu"}'::jsonb NOT NULL,
     last_crop_context VARCHAR(50),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );

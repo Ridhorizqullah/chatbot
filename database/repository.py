@@ -75,34 +75,39 @@ class ConsultationRepository:
 
     @staticmethod
     async def get_session(phone_number: str) -> Optional[Dict[str, Any]]:
-        """Mengambil status sesi percakapan petani."""
+        """Mengambil status sesi percakapan petani dari tabel user_sessions (atau chat_sessions)."""
         supabase = get_supabase()
         if not supabase:
             return None
-        try:
-            res = supabase.table("chat_sessions").select("*").eq("phone_number", phone_number).maybe_single().execute()
-            return res.data if res else None
-        except Exception as e:
-            logger.error(f"Gagal mengambil sesi untuk {phone_number}: {e}")
-            return None
+        for table_name in ["user_sessions", "chat_sessions"]:
+            try:
+                res = supabase.table(table_name).select("*").eq("phone_number", phone_number).maybe_single().execute()
+                if res and res.data:
+                    return res.data
+            except Exception as e:
+                logger.debug(f"Pengecekan sesi pada tabel '{table_name}' ({phone_number}): {e}")
+        return None
 
     @staticmethod
     async def upsert_session(phone_number: str, current_state: Dict[str, Any], last_crop_context: Optional[str] = None) -> bool:
-        """Memperbarui status sesi percakapan."""
+        """Memperbarui status sesi percakapan dan timestamp updated_at ke waktu sekarang (now)."""
         supabase = get_supabase()
         if not supabase:
             return False
-        try:
-            payload = {
-                "phone_number": phone_number,
-                "current_state": current_state,
-                "last_crop_context": last_crop_context
-            }
-            supabase.table("chat_sessions").upsert(payload).execute()
-            return True
-        except Exception as e:
-            logger.error(f"Gagal memperbarui sesi untuk {phone_number}: {e}")
-            return False
+        from datetime import datetime, timezone
+        payload = {
+            "phone_number": phone_number,
+            "current_state": current_state,
+            "last_crop_context": last_crop_context,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        for table_name in ["user_sessions", "chat_sessions"]:
+            try:
+                supabase.table(table_name).upsert(payload).execute()
+                return True
+            except Exception as e:
+                logger.debug(f"Gagal upsert sesi ke tabel '{table_name}': {e}. Mencoba tabel alternatif...")
+        return False
 
     @staticmethod
     async def get_farmer_consultation_history(phone_number: str, limit: int = 3) -> List[Dict[str, Any]]:
