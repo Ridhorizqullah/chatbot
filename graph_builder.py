@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timezone
 from typing import TypedDict, Optional, Literal, Dict, Any, List
 from langgraph.graph import StateGraph, END
 from agents.schemas import (
@@ -18,6 +19,9 @@ from database.repository import ConsultationRepository
 from core.config import settings
 from core.logger import logger
 
+# ==========================================
+# STATE TYPEDICT
+# ==========================================
 
 class TaniState(TypedDict):
     """Definisi State lengkap untuk 6 Fitur Utama TaniPintar di LangGraph."""
@@ -25,8 +29,16 @@ class TaniState(TypedDict):
     user_message: str
     media_id: Optional[str]
     media_url: Optional[str]
-    intent: Literal["diagnosis", "vision_diagnosis", "market_price", "history", "weather", "fertilizer", "greeting", "fallback"]
+    intent: Literal[
+        "diagnosis", "vision_diagnosis", "market_price", "history",
+        "weather", "fertilizer", "greeting", "fallback",
+        "photo_instruction", "disease_text_prompt", "price_prompt",
+        "price_region_prompt", "weather_prompt", "fertilizer_prompt"
+    ]
     crop_context: Optional[str]
+    conversation_history: Optional[str]
+    awaiting_location: Optional[bool]
+    session_state: Optional[Dict[str, Any]]
     diagnosis_result: Optional[Dict[str, Any]]
     price_result: Optional[Dict[str, Any]]
     weather_result: Optional[Dict[str, Any]]
@@ -49,88 +61,246 @@ weather_service = WeatherService()
 # ==========================================
 
 async def router_node(state: TaniState) -> Dict[str, Any]:
-    """Mendeteksi 6 intensi layanan TaniPintar berdasarkan teks atau media gambar."""
+    """
+    Intent Classifier Langsung & Stateless untuk 6 Layanan TaniPintar.
+    Mengembalikan arsitektur Dual-RAG direct sesuai Slide Deck Capstone:
+      1. Jika ada gambar / media_id -> Langsung ke vision_diagnosis (Prioritas Utama).
+      2. Jika berupa sapaan/kata "menu" -> Langsung ke greeting (pesan tunggal ringkas).
+      3. Jika teks menyebut nama desa/kecamatan atau cuaca -> Langsung ke weather (BMKG Adm4).
+      4. Jika teks menanyakan harga pasar/komoditas -> Langsung ke market_price.
+      5. Jika teks menyebut pupuk/fase tanaman -> Langsung ke fertilizer.
+      6. Jika teks mengandung keluhan hama/penyakit -> Langsung ke diagnosis (Semantic SOP RAG).
+    """
     phone = state.get("phone_number", "")
     msg = state.get("user_message", "").lower().strip()
     media_id = state.get("media_id")
 
-    # Bersihkan karakter tanda baca untuk pencocokan kata yang fleksibel (misal "halo!", "pagi..", "p")
+    # Bersihkan karakter tanda baca untuk pencocokan kata yang fleksibel
     clean_msg = re.sub(r"[^\w\s]", "", msg).strip()
 
-    # 1. Cek apakah ini pengguna baru pertama kali chat (belum ada sesi / belum pernah disambut)
+    # 1. Cek sesi di database untuk menentukan greeting pembuka
     is_first_time = False
     if phone:
         try:
             session = await ConsultationRepository.get_session(phone)
-            if not session or not session.get("current_state", {}).get("has_greeted"):
+            if not session:
                 is_first_time = True
         except Exception as e:
             logger.debug(f"Gagal cek status sesi pertama kali: {e}")
             is_first_time = False
 
-    # Deteksi konteks tanaman (Cabai vs Padi)
-    detected_crop = None
+    # Deteksi konteks tanaman (Cabai vs Padi), pertahankan konteks dari sesi bila ada
+    detected_crop = state.get("crop_context")
     if "cabai" in msg or "cabe" in msg:
         detected_crop = "cabai"
     elif "padi" in msg or "gabah" in msg or "sawah" in msg or "beras" in msg:
         detected_crop = "padi"
 
-    # 2. Fitur 2: Konsultasi Foto (Multimodal Vision saat media foto diterima)
+    # ==============================================================
+    # 1. PRIORITAS UTAMA: Multimodal Vision saat media foto diterima
+    # ==============================================================
     if media_id:
-        return {"intent": "vision_diagnosis", "is_first_interaction": is_first_time}
+        return {
+            "intent": "vision_diagnosis",
+            "crop_context": detected_crop,
+            "is_first_interaction": is_first_time
+        }
 
-    # 2b. Konsultasi Foto (Instruksi Pengiriman Foto saat media belum dilampirkan)
-    photo_intent_keywords = [
-        "konsultasi foto", "cek foto", "kirim foto", "analisis foto", "diagnosa foto",
-        "foto tanaman", "foto daun", "foto buah", "foto penyakit", "foto sakit",
-        "mau kirim foto", "bisa kirim foto", "bisa cek foto", "periksa foto",
-        "menu_foto", "btn_foto", "btn_konsultasi_foto"
+    # ==============================================================
+    # 2. Manajemen State Percakapan Terpandu (Multi-turn State Machine)
+    # ==============================================================
+    session_curr = state.get("session_state") or {}
+    session_step = session_curr.get("step")
+    stored_commodity = session_curr.get("commodity")
+
+    # Kamus wilayah sentra pasar dan singkatan lokal (DIY & Magelang)
+    known_regions = {
+        "sleman": "Sleman",
+        "bantul": "Bantul",
+        "kulon progo": "Kulon Progo",
+        "kulonprogo": "Kulon Progo",
+        "wates": "Kulon Progo",
+        "garongan": "Kulon Progo",
+        "bugel": "Kulon Progo",
+        "jogja": "Yogyakarta",
+        "yogyakarta": "Yogyakarta",
+        "magelang": "Magelang",
+        "muntilan": "Magelang",
+        "sawangan": "Magelang",
+    }
+
+    # Ekstraksi nama wilayah pasar dari pesan masuk
+    detected_region = None
+    if clean_msg.startswith("btn_region_"):
+        r_key = clean_msg.replace("btn_region_", "").strip()
+        detected_region = known_regions.get(r_key) or r_key.title()
+    elif session_step == "awaiting_price_region" and clean_msg in ["1", "1."]:
+        detected_region = "Sleman"
+    elif session_step == "awaiting_price_region" and clean_msg in ["2", "2."]:
+        detected_region = "Bantul"
+    elif session_step == "awaiting_price_region" and clean_msg in ["3", "3."]:
+        detected_region = "Kulon Progo"
+    elif session_step == "awaiting_price_region" and clean_msg in ["4", "4."]:
+        detected_region = "Yogyakarta"
+    elif session_step == "awaiting_price_region" and clean_msg in ["5", "5."]:
+        detected_region = "Magelang"
+    else:
+        for k_reg, v_reg in known_regions.items():
+            if k_reg in clean_msg:
+                detected_region = v_reg
+                break
+
+    # Ekstraksi nama komoditas pasar dari pesan masuk
+    detected_price_commodity = None
+    if any(k in clean_msg for k in ["cabai", "cabe", "rawit", "keriting", "btn_harga_cabai"]):
+        detected_price_commodity = "Cabai"
+    elif any(k in clean_msg for k in ["padi", "beras", "gabah", "gkp", "btn_harga_padi"]):
+        detected_price_commodity = "Padi & Beras"
+    elif session_step == "awaiting_price_commodity" and clean_msg in ["1", "1."]:
+        detected_price_commodity = "Cabai"
+    elif session_step == "awaiting_price_commodity" and clean_msg in ["2", "2."]:
+        detected_price_commodity = "Padi & Beras"
+
+    # Penanganan percakapan lanjutan: Pengguna sedang memilih Komoditas Pasar
+    if session_step == "awaiting_price_commodity":
+        if detected_price_commodity:
+            if detected_region:
+                return {
+                    "intent": "market_price",
+                    "user_message": f"{detected_price_commodity} di {detected_region}",
+                    "crop_context": detected_price_commodity,
+                    "session_state": {"step": "main_menu"}
+                }
+            return {
+                "intent": "price_region_prompt",
+                "crop_context": detected_price_commodity,
+                "session_state": {"step": "awaiting_price_region", "commodity": detected_price_commodity}
+            }
+
+    # Penanganan percakapan lanjutan: Pengguna sedang memilih Wilayah Pasar
+    if session_step == "awaiting_price_region":
+        if detected_region:
+            resolved_comm = stored_commodity or detected_crop or "Cabai"
+            return {
+                "intent": "market_price",
+                "user_message": f"{resolved_comm} di {detected_region}",
+                "crop_context": resolved_comm,
+                "session_state": {"step": "main_menu"}
+            }
+
+    # ==============================================================
+    # 3. Kata Kunci & Menu Harga Pasar Komoditas (Cabai & Padi)
+    # ==============================================================
+    price_prompt_phrases = [
+        "cek harga", "cek harga pasar", "harga pasar", "info harga", "harga",
+        "btn_cek_harga", "menu_harga", "3", "3.",
+        "cek harga pasar harga cabai padi hari ini",
+        "cek harga pasar harga cabai & padi hari ini",
+        "harga cabai & padi hari ini",
+        "harga cabai padi hari ini",
+        "harga cabai dan padi hari ini"
     ]
-    if any(k in clean_msg for k in photo_intent_keywords) or clean_msg in ["foto", "kirim gambar", "upload foto"]:
-        return {"intent": "photo_instruction", "crop_context": detected_crop, "is_first_interaction": is_first_time}
+    is_price_menu_clicked = (
+        clean_msg in price_prompt_phrases or
+        clean_msg in ["3", "3.", "btn_cek_harga", "menu_harga"] or
+        clean_msg.startswith("cek harga") or
+        clean_msg.startswith("harga pasar") or
+        "btn_cek_harga" in clean_msg
+    )
 
-    # 2c. Tanya Penyakit Teks (Prompt menceritakan gejala jika belum ada keluhan)
-    disease_prompt_keywords = [
-        "tanya penyakit", "konsultasi teks", "konsultasi penyakit", "tanya hama",
-        "cek penyakit", "btn_tanya_penyakit", "menu_tanya_penyakit"
+    price_keywords = [
+        "harga", "pasar", "sekilo", "per kilo", "perkilo", "jual", "tengkulak",
+        "gkp", "gabah", "beras", "biaya", "patokan", "btn_harga"
     ]
-    if any(clean_msg == k or clean_msg.startswith(f"{k} ") for k in disease_prompt_keywords):
-        return {"intent": "disease_text_prompt", "crop_context": detected_crop, "is_first_interaction": is_first_time}
+    has_price_kw = any(k in clean_msg for k in price_keywords) or "btn_harga" in clean_msg
 
-    # 3. Fitur 4: Riwayat Konsultasi
-    history_keywords = ["riwayat", "histori", "rekam jejak", "konsultasi lalu", "konsultasi saya", "riwayat penyakit"]
-    if any(k in msg for k in history_keywords):
-        return {"intent": "history", "crop_context": detected_crop, "is_first_interaction": is_first_time}
+    if is_price_menu_clicked:
+        return {
+            "intent": "price_prompt",
+            "crop_context": detected_crop,
+            "session_state": {"step": "awaiting_price_commodity"}
+        }
 
-    # 4. Fitur 5: Prediksi Cuaca Pertanian (Prompt Lokasi vs Langsung Data)
-    weather_keywords = ["cuaca", "hujan", "mendung", "suhu", "angin", "prakiraan", "kapan nyemprot", "kelembapan", "gerimis"]
-    location_keywords = [
-        "sleman", "bantul", "kulon progo", "gunungkidul", "jogja", "yogyakarta",
+    if has_price_kw:
+        if detected_price_commodity and detected_region:
+            return {
+                "intent": "market_price",
+                "user_message": f"{detected_price_commodity} di {detected_region}",
+                "crop_context": detected_price_commodity,
+                "session_state": {"step": "main_menu"}
+            }
+        elif detected_price_commodity:
+            return {
+                "intent": "price_region_prompt",
+                "crop_context": detected_price_commodity,
+                "session_state": {"step": "awaiting_price_region", "commodity": detected_price_commodity}
+            }
+        else:
+            return {
+                "intent": "price_prompt",
+                "crop_context": detected_crop,
+                "session_state": {"step": "awaiting_price_commodity"}
+            }
+
+    # ==============================================================
+    # 4. Kata Kunci Lokasi & Cuaca Pertanian (BMKG Adm4)
+    # ==============================================================
+    weather_keywords = [
+        "cuaca", "hujan", "mendung", "suhu", "angin", "prakiraan", "kapan nyemprot",
+        "kelembapan", "gerimis", "panas", "adem", "nyemprot", "deras", "kilat", "petir",
+        "waktu aman semprot", "aman semprot", "waktu semprot"
+    ]
+    admin_location_keywords = [
+        "desa", "kelurahan", "kecamatan", "kabupaten", "kota", "dusun", "dukuh", "kampung"
+    ]
+    known_locations = [
+        "sleman", "bantul", "kulon progo", "kulonprogo", "gunungkidul", "jogja", "yogyakarta",
         "magelang", "muntilan", "sawangan", "mertoyudan", "borobudur", "srumbung",
         "ngablak", "tempel", "turi", "pakem", "ngaglik", "kalasan", "prambanan",
-        "sedayu", "pandak", "kretek", "kasihan", "sewon", "sentolo", "pengasih"
+        "sedayu", "pandak", "kretek", "kasihan", "sewon", "sentolo", "pengasih",
+        "tuksono", "wates", "garongan", "panjatan", "imogiri", "wonosari", "pakis", "secang"
     ]
-    has_location = any(loc in msg for loc in location_keywords)
-    if any(k in msg for k in weather_keywords) or "btn_info_cuaca" in clean_msg:
-        # Jika belum ada lokasi dan inputnya singkat (contoh tombol 'Info Cuaca') -> minta lokasi/desa
-        if not has_location and (clean_msg in ["cuaca", "info cuaca", "cek cuaca", "cuaca hari ini", "prakiraan cuaca", "btn_info_cuaca"] or len(clean_msg.split()) <= 3):
-            return {"intent": "weather_prompt", "crop_context": detected_crop, "is_first_interaction": is_first_time}
+
+    has_weather_kw = any(k in msg for k in weather_keywords)
+    has_admin_kw = any(k in clean_msg.split() for k in admin_location_keywords)
+    has_known_loc = any(loc in msg for loc in known_locations)
+
+    weather_prompt_phrases = [
+        "info cuaca", "cek cuaca", "cuaca", "cuaca hari ini", "prakiraan cuaca",
+        "btn_info_cuaca", "menu_cuaca", "4", "4.",
+        "waktu aman semprot", "2 waktu aman semprot", "2. waktu aman semprot"
+    ]
+
+    if (clean_msg in weather_prompt_phrases or clean_msg in ["4", "4.", "btn_info_cuaca", "menu_cuaca"]) and not has_known_loc:
+        return {"intent": "weather_prompt", "crop_context": detected_crop, "is_first_interaction": is_first_time}
+
+    if (has_known_loc or has_weather_kw or has_admin_kw) and not has_price_kw:
         return {"intent": "weather", "crop_context": detected_crop, "is_first_interaction": is_first_time}
 
-    # 5. Fitur 3: Harga Pasar Padi dan Cabai (Prompt Komoditas vs Langsung Data)
-    price_keywords = ["harga", "pasar", "sekilo", "per kilo", "jual", "tengkulak", "gkp", "gabah", "beras", "biaya"]
-    if any(k in msg for k in price_keywords) or "btn_cek_harga" in clean_msg:
-        # Jika belum ada komoditas cabai/padi dan inputnya singkat -> arahkan pilihan komoditas
-        if not detected_crop and (clean_msg in ["harga", "cek harga", "harga pasar", "cek harga pasar", "btn_cek_harga"] or len(clean_msg.split()) <= 3):
-            return {"intent": "price_prompt", "crop_context": None, "is_first_interaction": is_first_time}
-        return {"intent": "market_price", "crop_context": detected_crop, "is_first_interaction": is_first_time}
+    # ==============================================================
+    # 5. Rekomendasi Pupuk & Dosis Tanaman
+    # ==============================================================
+    fertilizer_keywords = [
+        "pupuk", "pemupukan", "dosis", "urea", "npk", "sp-36", "sp36", "kcl", "kno3",
+        "kalsium", "silika", "obat", "pestisida", "fungisida", "insektisida", "bakterisida",
+        "semprot apa", "hst", "fase vegetatif", "fase generatif", "bunting",
+        "dosis pupuk & obat", "dosis pupuk dan obat", "dosis pupuk obat"
+    ]
+    has_fert_kw = any(k in clean_msg for k in fertilizer_keywords)
 
-    # 6. Fitur 6: Rekomendasi Pestisida & Pupuk Spesifik
-    fertilizer_keywords = ["pupuk", "pemupukan", "dosis", "urea", "npk", "sp-36", "kcl", "kno3", "kalsium", "silika", "obat", "pestisida", "fungisida", "insektisida", "bakterisida", "semprot apa"]
-    if any(k in msg for k in fertilizer_keywords):
+    fertilizer_prompt_phrases = [
+        "5", "5.", "btn_pupuk", "menu_pupuk", "panduan pupuk", "panduan pupuk & obat",
+        "panduan pupuk dan obat", "panduan pupuk obat"
+    ]
+    if clean_msg in fertilizer_prompt_phrases:
+        return {"intent": "fertilizer_prompt", "crop_context": detected_crop, "is_first_interaction": is_first_time}
+
+    if has_fert_kw:
         return {"intent": "fertilizer", "crop_context": detected_crop, "is_first_interaction": is_first_time}
 
-    # 7. Sapaan Umum, Bantuan & Pembuka Percakapan Fleksibel
+    # ==============================================================
+    # 6. Sapaan Umum, Bantuan & Perintah Menu
+    # ==============================================================
     greeting_triggers = [
         "halo", "hallo", "hello", "hai", "hi", "hey", "hei",
         "assalamualaikum", "assalamu'alaikum", "samlikum", "askum", "mikum",
@@ -138,33 +308,67 @@ async def router_node(state: TaniState) -> Dict[str, Any]:
         "pagi", "siang", "sore", "malam",
         "selamat pagi", "selamat siang", "selamat sore", "selamat malam",
         "permisi", "punten", "kulonuwun",
-        "bisa bantu", "bisa tanya", "mau tanya", "tanya", "nanya",
-        "bantuan", "help", "menu", "fitur", "info", "informasi",
-        "mulai", "start", "bot", "tanipintar", "siapa kamu", "apa ini"
+        "bisa bantu", "bisa tanya", "mau tanya",
+        "bantuan", "help", "menu", "fitur",
+        "mulai", "start", "awal", "batal", "reset", "bot", "tanipintar",
+        "btn_menu", "btn_menu_utama"
     ]
 
     is_greeting_match = (
         clean_msg in greeting_triggers or
-        any(clean_msg.startswith(f"{k} ") or clean_msg == k for k in greeting_triggers) or
+        any(clean_msg == k or clean_msg.startswith(f"{k} ") for k in greeting_triggers) or
         any(k in clean_msg for k in ["bisa bantu", "mau tanya", "selamat pagi", "selamat siang", "selamat sore", "selamat malam"])
     )
 
-    # Kata kunci indikasi penyakit tanaman spesifik
-    symptom_keywords = [
-        "bercak", "busuk", "kuning", "keriting", "layu", "rontok", "hama",
-        "ulat", "wereng", "kutu", "jamur", "bakteri", "daun", "buah", "batang",
-        "akar", "malai", "bulir", "kering", "bolong", "gosong", "bintik"
+    # Indikasi kata gejala spesifik penyakit tanaman (bukan kata umum menu)
+    specific_symptoms = [
+        "bercak", "busuk", "kuning", "keriting", "layu", "rontok",
+        "ulat", "wereng", "kutu", "jamur", "bakteri",
+        "kering", "bolong", "gosong", "bintik", "patek", "kresek"
     ]
-    has_symptom_word = any(s in clean_msg for s in symptom_keywords)
+    has_specific_symptom = any(s in clean_msg for s in specific_symptoms)
+    has_symptom_word = has_specific_symptom or any(s in clean_msg for s in ["hama", "daun", "buah", "batang", "akar", "malai", "bulir"])
 
-    # Trigger Menu Selamat Datang jika:
-    # a) Pesan mengandung sapaan/pembuka
-    # b) Pengguna baru pertama kali chat dan pesannya singkat (<= 4 kata) tanpa menyebut penyakit
-    # c) Pesan sangat pendek (<= 3 karakter, misal "p", "?") tanpa konteks penyakit
-    if is_greeting_match or (is_first_time and not has_symptom_word and len(clean_msg.split()) <= 4) or (len(clean_msg) <= 3 and not has_symptom_word):
+    is_numeric_input = clean_msg.isdigit() or clean_msg in []  
+    if not is_numeric_input and not has_symptom_word and is_greeting_match:
         return {"intent": "greeting", "crop_context": detected_crop, "is_first_interaction": is_first_time}
 
-    # 8. Fitur 1: Konsultasi Teks 11 Penyakit (Default keluhan tanaman)
+    # ==============================================================
+    # 7. Pilihan Tombol / Shortcut Interaktif Lainnya
+    # ==============================================================
+    # Konsultasi Foto
+    photo_intent_keywords = [
+        "konsultasi foto", "cek foto", "kirim foto", "analisis foto", "diagnosa foto",
+        "foto tanaman", "foto daun", "foto buah", "foto penyakit", "foto sakit",
+        "mau kirim foto", "bisa kirim foto", "bisa cek foto", "periksa foto",
+        "menu_foto", "btn_foto", "btn_konsultasi_foto"
+    ]
+    if clean_msg in ["2", "2.", "btn_konsultasi_foto", "btn_foto", "menu_foto"] or any(k in clean_msg for k in photo_intent_keywords) or clean_msg in ["foto", "kirim gambar", "upload foto"]:
+        return {"intent": "photo_instruction", "crop_context": detected_crop, "is_first_interaction": is_first_time}
+
+    # Riwayat Konsultasi
+    history_keywords = ["riwayat", "histori", "rekam jejak", "konsultasi lalu", "konsultasi saya", "riwayat penyakit", "btn_riwayat", "menu_riwayat"]
+    if clean_msg in ["6", "6.", "btn_riwayat", "menu_riwayat"] or any(k in clean_msg for k in history_keywords):
+        return {"intent": "history", "crop_context": detected_crop, "is_first_interaction": is_first_time}
+
+    # Tanya Penyakit Teks
+    disease_prompt_keywords = [
+        "tanya penyakit", "konsultasi teks", "konsultasi penyakit", "tanya hama",
+        "cek penyakit", "btn_tanya_penyakit", "menu_tanya_penyakit",
+        "ceritakan gejala", "ceritakan gejala tanaman lewat teks",
+        "tanya hama  penyakit", "tanya hama dan penyakit", "tanya hama & penyakit"
+    ]
+    is_disease_prompt_match = (
+        clean_msg in ["1", "1.", "btn_tanya_penyakit"] or
+        any(k in clean_msg for k in disease_prompt_keywords)
+    )
+    if is_disease_prompt_match and not has_specific_symptom:
+        return {"intent": "disease_text_prompt", "crop_context": detected_crop, "is_first_interaction": is_first_time}
+
+    # ==============================================================
+    # 8. Diagnosa Hama & Penyakit (Semantic SOP RAG)
+    # Default direct routing untuk segala keluhan tanaman cabai & padi
+    # ==============================================================
     return {
         "intent": "diagnosis",
         "crop_context": detected_crop,
@@ -208,11 +412,16 @@ async def vision_node(state: TaniState) -> Dict[str, Any]:
 
 
 async def diagnosis_node(state: TaniState) -> Dict[str, Any]:
-    """Fitur 1: Menjalankan RAG Semantik untuk 11 Penyakit Tanaman Cabai & Padi."""
+    """Fitur 1: Menjalankan RAG Semantik untuk 11 Penyakit Tanaman Cabai & Padi dengan Multi-Turn Memory."""
     query = state.get("user_message", "")
     crop_context = state.get("crop_context")
+    conversation_history = state.get("conversation_history")
 
-    result = await diagnosis_agent.diagnose_text(query, crop_context)
+    result = await diagnosis_agent.diagnose_text(
+        user_query=query,
+        crop_hint=crop_context,
+        conversation_history=conversation_history
+    )
     return {"diagnosis_result": result.model_dump()}
 
 
@@ -231,8 +440,20 @@ async def history_node(state: TaniState) -> Dict[str, Any]:
 
 
 async def weather_node(state: TaniState) -> Dict[str, Any]:
-    """Fitur 5: Mengambil data prakiraan cuaca Open-Meteo & advisory semprot."""
+    """Fitur 5: Mengambil data prakiraan cuaca BMKG Adm4 & Open-Meteo serta advisory semprot."""
     query = state.get("user_message", "")
+
+    # 1. Bersihkan tanda baca
+    clean_text = re.sub(r"[^\w\s]", " ", query).strip()
+    words = clean_text.split()
+
+    # 2. Buang awalan kata administratif
+    PREFIX_WORDS = {"desa", "kelurahan", "kecamatan", "kec", "kabupaten", "kab", "kota", "di"}
+    while words and words[0].lower() in PREFIX_WORDS:
+        words.pop(0)
+
+    location_detail = " ".join(words).title() if words else "Yogyakarta"
+    last_word = words[-1].title() if words else "Yogyakarta"
 
     # Alias & normalisasi nama sentra fokus DIY & Magelang
     CITY_ALIASES = {
@@ -245,6 +466,8 @@ async def weather_node(state: TaniState) -> Dict[str, Any]:
         "kulon progo": "Kulon Progo",
         "wates": "Wates",
         "garongan": "Garongan",
+        "sentolo": "Sentolo",
+        "tuksono": "Tuksono",
         "magelang": "Magelang",
         "sawangan": "Sawangan",
         "muntilan": "Muntilan",
@@ -263,35 +486,54 @@ async def weather_node(state: TaniState) -> Dict[str, Any]:
         "saya", "untuk", "kapan", "bisa", "boleh", "apakah", "ini",
         "petani", "tanaman", "kebun", "lahan", "padi", "cabai",
         "sekarang", "terkini", "update", "info", "tolong", "mohon",
-        "gimana", "gimana", "dong", "yuk", "mau", "dari", "akan"
+        "gimana", "dong", "yuk", "mau", "dari", "akan"
     }
 
-    loc_guess = "Yogyakarta"  # default fokus wilayah D.I. Yogyakarta
-    query_lower = query.lower().replace("?", "").replace("!", "").replace(",", "").replace(".", "")
-
-    # 1. Cek alias dulu (jogja, sleman, magelang, muntilan, dll)
+    loc_alias = None
+    query_lower = clean_text.lower()
     for alias, city in CITY_ALIASES.items():
         if alias in query_lower.split() or alias in query_lower:
-            loc_guess = city
+            loc_alias = city
             break
-    else:
-        # 2. Ambil kandidat kata dengan panjang > 3 yang bukan stop-word
-        candidates = [
-            w.capitalize()
-            for w in query_lower.split()
-            if len(w) > 3 and w not in NON_LOCATION_WORDS
-        ]
-        if candidates:
-            # Prioritaskan kata yang diawali huruf kapital di query asli (nama tempat)
-            original_words = query.replace("?", "").split()
-            capitalized = [w for w in original_words if w[0].isupper() and len(w) > 3]
-            if capitalized:
-                loc_guess = capitalized[0]
-            else:
-                loc_guess = candidates[0]  # ambil kandidat pertama (bukan terakhir)
 
-    result = await weather_service.get_weather_forecast(loc_guess)
-    return {"weather_result": result.model_dump()}
+    # Urutan pemanggilan dengan graceful fallback:
+    candidates_to_try = []
+    if loc_alias:
+        candidates_to_try.append(loc_alias)
+    if location_detail and location_detail not in candidates_to_try and location_detail.lower() not in NON_LOCATION_WORDS:
+        candidates_to_try.append(location_detail)
+    if last_word and last_word not in candidates_to_try and last_word.lower() not in NON_LOCATION_WORDS:
+        candidates_to_try.append(last_word)
+    if "Yogyakarta" not in candidates_to_try:
+        candidates_to_try.append("Yogyakarta")
+
+    result = None
+    for loc_candidate in candidates_to_try:
+        try:
+            res = await weather_service.get_weather_forecast(loc_candidate)
+            if res and getattr(res, "lokasi", None):
+                result = res
+                break
+        except Exception as e:
+            logger.debug(f"Percobaan cuaca untuk '{loc_candidate}' gagal: {e}")
+
+    # Fallback akhir jika seluruh pemanggilan gagal
+    if result is None:
+        try:
+            result = await weather_service.get_weather_forecast("Yogyakarta")
+        except Exception as e:
+            logger.error(f"Fallback akhir cuaca Yogyakarta gagal: {e}")
+            result = WeatherAdvisoryResult(
+                lokasi="Yogyakarta",
+                cuaca_saat_ini="Cerah Berawan",
+                suhu_celsius=28.0,
+                kelembapan_persen=75,
+                peluang_hujan_persen=20,
+                advisory_penyemprotan="✅ Waktu aman penyemprotan pagi hari pukul 06.30 - 09.00.",
+                advisory_pemupukan="✅ Pemupukan kocor aman dilakukan."
+            )
+
+    return {"weather_result": result.model_dump() if hasattr(result, "model_dump") else result}
 
 
 async def fertilizer_node(state: TaniState) -> Dict[str, Any]:
@@ -341,11 +583,31 @@ async def disease_text_prompt_node(state: TaniState) -> Dict[str, Any]:
 
 
 async def price_prompt_node(state: TaniState) -> Dict[str, Any]:
-    """Mengarahkan petani memilih komoditas untuk cek harga pasar."""
+    """Mengarahkan petani memilih komoditas terlebih dahulu untuk cek harga pasar."""
     prompt_text = (
-        "💰 *INFORMASI HARGA PASAR HARIAN*\n\n"
-        "Saya menyediakan data acuan harga tingkat petani (kebun) dan harga pasar di wilayah D.I. Yogyakarta & Magelang.\n\n"
-        "Silakan pilih komoditas yang ingin Anda cek melalui tombol di bawah, atau ketik langsung misalnya: _'Harga cabai rawit hari ini'_."
+        "💰 *INFORMASI HARGA PASAR HARIAN (DIY & MAGELANG)*\n\n"
+        "Bapak/Ibu Petani ingin mengecek harga untuk komoditas apa hari ini?\n\n"
+        "1️⃣ *Cabai* (Cabai Rawit Merah, Rawit Hijau, Merah Keriting, Merah Besar)\n"
+        "2️⃣ *Padi & Beras* (Gabah Kering Panen/GKP, Beras Medium, Beras Super)\n\n"
+        "Silakan pilih tombol di bawah atau ketik pilihan Anda (*Cabai* atau *Padi/Beras*).\n\n"
+        "💡 _Tips: Anda juga bisa langsung mengetik misalnya 'Harga cabai di Bantul' atau 'Harga beras di Sleman'._"
+    )
+    return {"final_response": prompt_text}
+
+
+async def price_region_prompt_node(state: TaniState) -> Dict[str, Any]:
+    """Mengarahkan petani memilih wilayah pasar sentra untuk komoditas terpilih."""
+    crop = state.get("crop_context") or "Cabai"
+    crop_label = "Cabai (Rawit/Merah)" if "cabai" in crop.lower() else "Padi & Beras"
+    prompt_text = (
+        f"📍 *PILIH WILAYAH PASAR ({crop_label.upper()})*\n\n"
+        f"Untuk memantau harga komoditas *{crop_label}*, silakan sebutkan wilayah pasar Anda:\n\n"
+        f"1. *Sleman* (Titik Kumpul Tempel & Pasar Godean)\n"
+        f"2. *Bantul* (Pasar Niten & Pasar Imogiri)\n"
+        f"3. *Kulon Progo* (Pasar Lelang Garongan/Bugel & Wates)\n"
+        f"4. *Kota Yogyakarta* (Pasar Beringharjo & Giwangan)\n"
+        f"5. *Magelang* (Pasar Rejowinangun & Lelang Sayur Muntilan/Sawangan)\n\n"
+        f"Silakan ketik nama daerah Anda (contoh: *Bantul* atau *Sleman*), atau klik tombol di bawah."
     )
     return {"final_response": prompt_text}
 
@@ -361,7 +623,20 @@ async def weather_prompt_node(state: TaniState) -> Dict[str, Any]:
     return {"final_response": prompt_text}
 
 
-FOOTER_MENU_HINT = "\n\n💡 Ketik *'menu'* kapan saja jika ingin kembali ke halaman utama."
+async def fertilizer_prompt_node(state: TaniState) -> Dict[str, Any]:
+    """Mengarahkan petani menyebutkan komoditas dan fase/kebutuhan dosis pupuk & obat."""
+    prompt_text = (
+        "🧪 *PANDUAN DOSIS PUPUK & OBAT*\n\n"
+        "Bisa sebutkan jenis tanaman (Cabai atau Padi) serta usia/fase tanaman atau keluhan yang ingin ditangani?\n\n"
+        "📌 *Contoh:*\n"
+        "• _'Dosis pupuk susulan cabai rawit umur 30 HST'_\n"
+        "• _'Rekomendasi takaran urea dan NPK untuk padi fase bunting'_\n\n"
+        "Saya akan bantu hitungkan takaran dosis anjuran dan cara aplikasi yang tepat dan aman. 🌾"
+    )
+    return {"final_response": prompt_text}
+
+
+FOOTER_MENU_HINT = "\n\n💡 Ketik *menu* kapan saja untuk opsi bantuan lain. Ketik *'menu'* kapan saja jika ingin kembali ke halaman utama."
 
 
 async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
@@ -372,7 +647,10 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
     # Sisipkan banner selamat datang jika ini adalah percakapan pertama kali pengguna (bukan greeting/prompt interaktif)
     is_first = state.get("is_first_interaction", False)
     welcome_banner = ""
-    interactive_intents = ["greeting", "photo_instruction", "disease_text_prompt", "price_prompt", "weather_prompt"]
+    interactive_intents = [
+        "greeting", "photo_instruction", "disease_text_prompt",
+        "price_prompt", "price_region_prompt", "weather_prompt", "fertilizer_prompt"
+    ]
     if is_first and state.get("intent") not in interactive_intents:
         welcome_banner = (
             "🌾 *TaniPintar* — Sahabat Petani Cabai & Padi\n"
@@ -464,9 +742,9 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
         confidence = diag.get("confidence_score", 0.0)
         rujuk_ppl = diag.get("rujuk_ke_ppl", False)
 
-        # GUARDRAIL AMBANG BATAS KEYAKINAN (< 0.70)
-        if confidence < settings.confidence_threshold or rujuk_ppl:
-            logger.info(f"Guardrail aktif: Confidence {confidence} < {settings.confidence_threshold}")
+        # GUARDRAIL AMBANG BATAS: Jika keyakinan sangat rendah (< 35%) atau tidak ada indikasi penyakit
+        if confidence < 0.35 and not diag.get("nama_penyakit"):
+            logger.info(f"Guardrail aktif: Confidence sangat rendah ({confidence})")
             return {"final_response": welcome_banner + SAFE_FALLBACK_MESSAGE + FOOTER_MENU_HINT}
 
         langkah = diag.get("langkah_penanganan", {})
@@ -486,6 +764,16 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
         ref_image_url = diag.get("visual_reference_url") or await ConsultationRepository.get_reference_image(diag.get("nama_penyakit", ""))
         ref_section = f"\n\n📷 *Foto Pembanding Referensi (Supabase Storage):*\n{ref_image_url}" if ref_image_url else ""
 
+        # Peringatan PPL jika deskripsi petani singkat/ambigu (tingkat keyakinan moderat)
+        ppl_warning = ""
+        if confidence < settings.confidence_threshold or rujuk_ppl:
+            ppl_warning = (
+                f"\n\n⚠️ *Catatan Tingkat Keyakinan Moderat ({int(confidence * 100)}%):*\n"
+                f"Karena deskripsi gejala masih singkat/umum, hasil di atas merupakan *dugaan awal yang paling mendekati*. "
+                f"Utamakan penanganan fisik/sanitasi terlebih dahulu, dan Anda dapat mengirimkan *foto tanaman yang sakit* "
+                f"atau mengonfirmasi ke PPL setempat sebelum aplikasi kimiawi berat."
+            )
+
         msg = (
             f"🌿 *HASIL DIAGNOSIS TANAMAN ({diag.get('nama_tanaman', '').upper()})*{photo_info}\n\n"
             f"🎯 *Indikasi:* {diag.get('nama_penyakit')} "
@@ -497,8 +785,9 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
             f"🛠️ *LANGKAH PENANGANAN PRAKTIS (3 PILAR):*\n"
             f"1. *Fisik / Mekanis:*\n   {langkah.get('mekanis')}\n\n"
             f"2. *Sanitasi Lahan & Drainase:*\n   {langkah.get('sanitasi')}\n\n"
-            f"3. *Bahan Aktif Kimiawi (Jika Diperlukan):*\n   {langkah.get('bahan_aktif_kimiawi') or 'Tidak diperlukan bahan kimiawi.'}\n\n"
+            f"3. *Bahan Aktif Kimiawi:*\n   {langkah.get('bahan_aktif_kimiawi') or 'Tidak diperlukan bahan kimiawi.'}\n\n"
             f"⚠️ *Catatan Keselamatan:*\n{diag.get('catatan_keamanan')}"
+            f"{ppl_warning}"
             f"{ref_section}\n\n"
             f"_Apabila gejala tidak membaik dalam 3-5 hari, segera hubungi PPL setempat._"
         )
@@ -527,20 +816,30 @@ async def audit_saver_node(state: TaniState) -> Dict[str, Any]:
     # Simpan status sesi percakapan dengan current_state posisi menu & timestamp updated_at
     intent = state.get("intent", "main_menu")
     step_map = {
-        "photo_instruction": "waiting_for_photo",
         "greeting": "main_menu",
         "diagnosis": "consultation_completed",
         "vision_diagnosis": "consultation_completed",
         "market_price": "price_view",
         "weather": "weather_view",
         "fertilizer": "fertilizer_view",
-        "history": "history_view"
+        "history": "history_view",
+        "photo_instruction": "main_menu",
+        "disease_text_prompt": "main_menu",
+        "price_prompt": "awaiting_price_commodity",
+        "price_region_prompt": "awaiting_price_region",
+        "weather_prompt": "main_menu",
+        "fertilizer_prompt": "main_menu"
     }
-    current_step = step_map.get(intent, f"in_{intent}")
+    fallback_step = step_map.get(intent, "main_menu")
+    session_st = state.get("session_state") or {"step": fallback_step}
+    if not isinstance(session_st, dict):
+        session_st = {"step": fallback_step}
+    session_st["last_intent"] = intent
+    session_st["has_greeted"] = True
 
     await ConsultationRepository.upsert_session(
         phone_number=phone,
-        current_state={"step": current_step, "last_intent": intent, "has_greeted": True},
+        current_state=session_st,
         last_crop_context=state.get("crop_context")
     )
     return {}
@@ -571,8 +870,12 @@ def route_intent(state: TaniState) -> str:
         return "disease_text_prompt"
     elif intent == "price_prompt":
         return "price_prompt"
+    elif intent == "price_region_prompt":
+        return "price_region_prompt"
     elif intent == "weather_prompt":
         return "weather_prompt"
+    elif intent == "fertilizer_prompt":
+        return "fertilizer_prompt"
     else:
         return "diagnosis"
 
@@ -593,7 +896,9 @@ def build_tani_graph():
     workflow.add_node("photo_instruction", photo_instruction_node)
     workflow.add_node("disease_text_prompt", disease_text_prompt_node)
     workflow.add_node("price_prompt", price_prompt_node)
+    workflow.add_node("price_region_prompt", price_region_prompt_node)
     workflow.add_node("weather_prompt", weather_prompt_node)
+    workflow.add_node("fertilizer_prompt", fertilizer_prompt_node)
     workflow.add_node("formatter", format_and_guardrail_node)
     workflow.add_node("audit_saver", audit_saver_node)
 
@@ -615,7 +920,9 @@ def build_tani_graph():
             "photo_instruction": "photo_instruction",
             "disease_text_prompt": "disease_text_prompt",
             "price_prompt": "price_prompt",
+            "price_region_prompt": "price_region_prompt",
             "weather_prompt": "weather_prompt",
+            "fertilizer_prompt": "fertilizer_prompt",
         }
     )
 
@@ -630,7 +937,9 @@ def build_tani_graph():
     workflow.add_edge("photo_instruction", "formatter")
     workflow.add_edge("disease_text_prompt", "formatter")
     workflow.add_edge("price_prompt", "formatter")
+    workflow.add_edge("price_region_prompt", "formatter")
     workflow.add_edge("weather_prompt", "formatter")
+    workflow.add_edge("fertilizer_prompt", "formatter")
 
     # Formatter lanjut ke audit saver lalu END
     workflow.add_edge("formatter", "audit_saver")

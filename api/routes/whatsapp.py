@@ -1,3 +1,4 @@
+import re
 import json
 import hmac
 import hashlib
@@ -11,9 +12,12 @@ from services.whatsapp_service import WhatsAppService
 from services.session_service import SessionService
 from core.dedup import message_deduplicator
 from core.latency_tracker import LatencyTracker
+from database.repository import ConsultationRepository
 
 router = APIRouter(prefix="/webhook", tags=["WhatsApp Webhook"])
 whatsapp_service = WhatsAppService()
+
+FOOTER_MENU_HINT = "\n\n💡 Ketik *menu* kapan saja untuk opsi bantuan lain. Ketik *'menu'* kapan saja jika ingin kembali ke halaman utama."
 
 
 def verify_waha_hmac(raw_body: bytes, headers: dict) -> bool:
@@ -84,34 +88,46 @@ async def process_incoming_message(
         await whatsapp_service.send_seen(to_phone=phone_number, message_id=msg_id, session=session)
         await whatsapp_service.start_typing(to_phone=phone_number, session=session)
 
-        # 2. Manajemen Sesi: Deteksi Kata Kunci Global Reset & Timeout 30 Menit
+        # 2. Manajemen Sesi: Deteksi Kata Kunci Global Reset
         should_reset, reset_reason, session_data = await SessionService.evaluate_incoming_message(
             phone_number=phone_number,
             message_text=message_text
         )
 
         if should_reset:
-            welcome_intro = (
-                "🌿 *Selamat Datang di TaniPintar Bot!*\n"
-                "Asisten Sahabat Petani Cerdas untuk Perlindungan Tanaman Cabai & Padi.\n\n"
-                "Silakan pilih menu layanan di bawah ini atau ketik pertanyaan Anda:"
-            )
-            if reset_reason == "session_timeout":
-                welcome_intro = "⏱️ _Sesi sebelumnya telah berakhir karena tidak ada interaksi selama 30 menit._\n\n" + welcome_intro
-
             tracker.start_phase("waha_delivery")
-            await whatsapp_service.send_text_message(to_phone=phone_number, text=welcome_intro, session=session)
-            await asyncio.sleep(0.6)
-            await whatsapp_service.send_main_menu_buttons(to_phone=phone_number, session=session)
+            # FUNGSI PESAN TUNGGAL (Mencegah double message): Sapaan ramah + menu dalam 1 balasan utuh
+            await whatsapp_service.send_welcome_menu(
+                to_phone=phone_number,
+                session=session,
+                reply_to=msg_id,
+                prefix_notice=None
+            )
             tracker.end_phase("waha_delivery")
             tracker.log_summary(has_media=bool(media_id))
             return
 
-        # Ambil konteks tanaman terakhir dari sesi aktif jika tersedia
+        # Ambil konteks tanaman terakhir dan riwayat percakapan untuk multi-turn context
         last_crop = session_data.get("last_crop_context") if session_data else None
+        conversation_context = None
+        try:
+            recent_audits = await ConsultationRepository.get_farmer_consultation_history(phone_number, limit=2)
+            if recent_audits:
+                last_audit = recent_audits[0]
+                c_crop = last_audit.get("crop_type") or "tanaman"
+                c_dis = last_audit.get("suspected_disease") or "keluhan"
+                c_rec = last_audit.get("bot_recommendation") or {}
+                steps = c_rec.get("langkah_penanganan", {}) if isinstance(c_rec, dict) else {}
+                c_sol = f"Mekanis: {steps.get('mekanis', '-')}, Kimiawi: {steps.get('bahan_aktif_kimiawi', '-')}"
+                conversation_context = f"Konsultasi Terakhir: {c_crop.capitalize()} terindikasi {c_dis}. Anjuran: {c_sol}"
+                if not last_crop and c_crop:
+                    last_crop = c_crop
+        except Exception as e:
+            logger.debug(f"Gagal mengambil riwayat multi-turn context: {e}")
 
         # Jalankan LangGraph StateGraph dengan tracking latensi
         tracker.start_phase("pipeline_processing")
+        session_curr = session_data.get("current_state", {}) if session_data else {}
         initial_state = {
             "phone_number": phone_number,
             "user_message": message_text or "",
@@ -119,7 +135,9 @@ async def process_incoming_message(
             "media_url": None,
             "intent": "diagnosis",
             "crop_context": last_crop,
+            "conversation_history": conversation_context,
             "is_first_interaction": not bool(session_data),
+            "session_state": session_curr,
             "diagnosis_result": None,
             "price_result": None,
             "weather_result": None,
@@ -133,37 +151,101 @@ async def process_incoming_message(
         final_reply = result.get("final_response", "")
 
         detected_intent = result.get("intent", "diagnosis")
+        clean_cmd = (message_text or "").lower().strip()
 
-        if final_reply:
+        # 3. Pengiriman Balasan Terpadu (Single Message untuk Greeting/Menu & Quoted Reply)
+        if detected_intent == "greeting" or clean_cmd in ["menu", "bantuan", "mulai", "awal", "batal"]:
             # Jeda Alami (Human Typing Delay) untuk Anti-Ban Hygiene
             if settings.waha_human_delay_seconds > 0:
                 await asyncio.sleep(settings.waha_human_delay_seconds)
 
             tracker.start_phase("waha_delivery")
-            await whatsapp_service.send_text_message(to_phone=phone_number, text=final_reply, session=session)
+            # FUNGSI PESAN TUNGGAL: Mengirimkan sambutan ramah + WhatsApp List Message utama 6 fitur
+            await whatsapp_service.send_welcome_menu(
+                to_phone=phone_number,
+                session=session,
+                reply_to=msg_id,
+                prefix_notice=None
+            )
+            tracker.end_phase("waha_delivery")
+            tracker.log_summary(has_media=bool(media_id))
+            return
+
+        if final_reply:
+            if FOOTER_MENU_HINT.strip() not in final_reply:
+                final_reply = final_reply.rstrip() + FOOTER_MENU_HINT
+
+            # Jeda Alami (Human Typing Delay) untuk Anti-Ban Hygiene
+            if settings.waha_human_delay_seconds > 0:
+                await asyncio.sleep(settings.waha_human_delay_seconds)
+
+            tracker.start_phase("waha_delivery")
+            # Sertakan reply_to agar bot me-quote pesan pengguna secara langsung
+            await whatsapp_service.send_text_message(
+                to_phone=phone_number,
+                text=final_reply,
+                session=session,
+                reply_to=msg_id
+            )
             tracker.end_phase("waha_delivery")
 
-            # 3. Pengiriman Komponen Interaktif Terstruktur
-            clean_cmd = (message_text or "").lower().strip()
-            if detected_intent == "greeting" or clean_cmd in ["menu", "bantuan", "mulai"]:
-                # Kirim Menu Utama berbasis Tombol Interaktif (Interactive Buttons)
-                await asyncio.sleep(0.6)
-                await whatsapp_service.send_main_menu_buttons(to_phone=phone_number, session=session)
+            # Perbarui updated_at dan status percakapan ke Supabase
+            resolved_crop = result.get("crop_context") or last_crop
+            updated_session_state = result.get("session_state")
+            if updated_session_state and updated_session_state.get("commodity"):
+                await SessionService.update_session_state(
+                    phone_number=phone_number,
+                    step=updated_session_state.get("step", "main_menu"),
+                    crop_context=resolved_crop,
+                    state_dict=updated_session_state
+                )
+            else:
+                new_step = (
+                    updated_session_state.get("step")
+                    if updated_session_state and updated_session_state.get("step")
+                    else ("consultation_completed" if detected_intent in ["diagnosis", "vision_diagnosis"] else "main_menu")
+                )
+                await SessionService.update_session_state(
+                    phone_number=phone_number,
+                    step=new_step,
+                    crop_context=resolved_crop
+                )
 
-            elif detected_intent == "price_prompt":
-                # Kirim Tombol Pilihan Komoditas Pasar
+            # Komponen Interaktif Terstruktur Tambahan
+            if detected_intent == "price_prompt":
+                # Tombol/List Pilihan Komoditas Pasar (Cabai vs Padi/Beras)
                 await asyncio.sleep(0.6)
-                await whatsapp_service.send_price_commodity_buttons(to_phone=phone_number, session=session)
+                await whatsapp_service.send_price_commodity_buttons(
+                    to_phone=phone_number,
+                    session=session,
+                    reply_to=msg_id
+                )
+            elif detected_intent == "price_region_prompt":
+                # List Pilihan Wilayah Pasar (Sleman, Bantul, Kulon Progo, Jogja, Magelang)
+                crop_lbl = "Cabai" if "cabai" in (resolved_crop or "cabai").lower() else "Padi & Beras"
+                await asyncio.sleep(0.6)
+                await whatsapp_service.send_price_region_list(
+                    to_phone=phone_number,
+                    commodity_label=crop_lbl,
+                    session=session,
+                    reply_to=msg_id
+                )
 
             elif detected_intent in ["diagnosis", "vision_diagnosis"] and result.get("diagnosis_result"):
-                # Kirim Reply Buttons (Tombol Pilihan Cepat) tindak lanjut perawatan
-                await asyncio.sleep(0.6)
-                await whatsapp_service.send_quick_action_buttons(
-                    to_phone=phone_number,
-                    body_text="Petani hebat, pilih langkah perawatan atau cek info terkait:",
-                    context="diagnosis",
-                    session=session
-                )
+                diag = result.get("diagnosis_result", {})
+                if (
+                    diag.get("is_supported_crop", True) and
+                    diag.get("confidence_score", 0.0) >= 0.35
+                ):
+                    # Tombol Pilihan Cepat Tindak Lanjut Perawatan
+                    await asyncio.sleep(0.6)
+                    await whatsapp_service.send_quick_action_buttons(
+                        to_phone=phone_number,
+                        body_text="Petani hebat, pilih langkah perawatan atau cek info terkait:",
+                        context="diagnosis",
+                        session=session,
+                        reply_to=msg_id
+                    )
 
         # Catat laporan latensi untuk demonstrasi dan evaluasi
         tracker.log_summary(has_media=bool(media_id))
@@ -177,30 +259,84 @@ async def process_incoming_message(
 
 # Mapping Aksi Interaktif (ID Button / List Row -> Teks Query AI)
 INTERACTIVE_ACTION_MAP = {
-    # 4 Tombol Pilihan Cepat Menu Utama
-    "btn_tanya_penyakit": "tanya penyakit",
-    "btn_konsultasi_foto": "konsultasi foto",
-    "btn_cek_harga": "cek harga pasar",
-    "btn_info_cuaca": "info cuaca",
+    # 6 Pilihan Menu Utama List Message & Buttons (ID & Text Matches)
+    "btn_tanya_penyakit": "btn_tanya_penyakit",
+    "tanya hama & penyakit": "btn_tanya_penyakit",
+    "tanya hama dan penyakit": "btn_tanya_penyakit",
+    "tanya hama  penyakit": "btn_tanya_penyakit",
+    "tanya hama penyakit": "btn_tanya_penyakit",
+    "ceritakan gejala tanaman lewat teks": "btn_tanya_penyakit",
+    "tanya hama & penyakit ceritakan gejala tanaman lewat teks": "btn_tanya_penyakit",
+    "tanya hama dan penyakit ceritakan gejala tanaman lewat teks": "btn_tanya_penyakit",
+    "tanya hama penyakit ceritakan gejala tanaman lewat teks": "btn_tanya_penyakit",
+
+    "btn_konsultasi_foto": "btn_konsultasi_foto",
+    "konsultasi foto": "btn_konsultasi_foto",
+    "kirim foto daun/buah untuk dianalisis": "btn_konsultasi_foto",
+    "kirim foto daunbuah untuk dianalisis": "btn_konsultasi_foto",
+    "konsultasi foto kirim foto daun/buah untuk dianalisis": "btn_konsultasi_foto",
+    "konsultasi foto kirim foto daunbuah untuk dianalisis": "btn_konsultasi_foto",
+
+    "btn_cek_harga": "btn_cek_harga",
+    "cek harga pasar": "btn_cek_harga",
+    "harga cabai & padi hari ini": "btn_cek_harga",
+    "harga cabai dan padi hari ini": "btn_cek_harga",
+    "harga cabai padi hari ini": "btn_cek_harga",
+    "cek harga pasar harga cabai & padi hari ini": "btn_cek_harga",
+    "cek harga pasar harga cabai dan padi hari ini": "btn_cek_harga",
+    "cek harga pasar harga cabai padi hari ini": "btn_cek_harga",
+
+    "btn_info_cuaca": "btn_info_cuaca",
+    "info cuaca & semprot": "btn_info_cuaca",
+    "info cuaca dan semprot": "btn_info_cuaca",
+    "info cuaca semprot": "btn_info_cuaca",
+    "waktu aman penyemprotan di lokasimu": "btn_info_cuaca",
+    "info cuaca & semprot waktu aman penyemprotan di lokasimu": "btn_info_cuaca",
+    "info cuaca dan semprot waktu aman penyemprotan di lokasimu": "btn_info_cuaca",
+    "info cuaca semprot waktu aman penyemprotan di lokasimu": "btn_info_cuaca",
+    "waktu aman semprot": "btn_info_cuaca",
+    "2 waktu aman semprot": "btn_info_cuaca",
+    "2. waktu aman semprot": "btn_info_cuaca",
+    "2. 🌦️ waktu aman semprot": "btn_info_cuaca",
+
+    "btn_pupuk": "btn_pupuk",
+    "panduan pupuk & obat": "btn_pupuk",
+    "panduan pupuk dan obat": "btn_pupuk",
+    "panduan pupuk obat": "btn_pupuk",
+    "dosis pupuk dan pestisida": "btn_pupuk",
+    "dosis pupuk & obat": "btn_pupuk",
+    "dosis pupuk dan obat": "btn_pupuk",
+    "dosis pupuk obat": "btn_pupuk",
+    "1 dosis pupuk obat": "btn_pupuk",
+    "1. dosis pupuk obat": "btn_pupuk",
+    "1. 🧪 dosis pupuk & obat": "btn_pupuk",
+    "panduan pupuk & obat dosis pupuk dan pestisida": "btn_pupuk",
+    "panduan pupuk dan obat dosis pupuk dan pestisida": "btn_pupuk",
+    "panduan pupuk obat dosis pupuk dan pestisida": "btn_pupuk",
+
+    "btn_riwayat": "btn_riwayat",
+    "riwayat konsultasi": "btn_riwayat",
+    "lihat konsultasi sebelumnya": "btn_riwayat",
+    "riwayat konsultasi lihat konsultasi sebelumnya": "btn_riwayat",
 
     # Tombol Pilihan Komoditas Cek Harga Pasar
     "btn_harga_cabai": "Berapa harga acuan cabai rawit merah hari ini?",
     "btn_harga_padi": "Berapa harga acuan gabah kering panen padi hari ini?",
     "btn_menu_utama": "menu",
-
-    # Tindak Lanjut Diagnosa
-    "btn_pupuk": "Rekomendasi takaran pupuk dan obat untuk penyakit ini.",
-    "btn_cuaca": "Prakiraan cuaca dan waktu aman penyemprotan.",
     "btn_menu": "menu",
 
-    # Kompatibilitas Menu List
-    "menu_foto": "konsultasi foto",
-    "menu_cabai": "Saya ingin konsultasi penyakit dan hama pada tanaman cabai.",
-    "menu_padi": "Saya ingin konsultasi penyakit dan hama pada tanaman padi.",
-    "menu_harga": "Berapa harga pasar cabai rawit dan gabah padi hari ini?",
-    "menu_cuaca": "Bagaimana prakiraan cuaca dan waktu aman penyemprotan hari ini?",
-    "menu_pupuk": "Rekomendasi takaran pupuk dan pencegahan hama tanaman.",
-    "menu_riwayat": "riwayat"
+    # Tindak Lanjut Diagnosa
+    "btn_cuaca": "info cuaca",
+    "btn_pupuk_rekomendasi": "Rekomendasi takaran pupuk dan pencegahan hama tanaman.",
+
+    # Kompatibilitas Menu List Lama
+    "menu_foto": "btn_konsultasi_foto",
+    "menu_cabai": "btn_tanya_penyakit",
+    "menu_padi": "btn_tanya_penyakit",
+    "menu_harga": "btn_cek_harga",
+    "menu_cuaca": "btn_info_cuaca",
+    "menu_pupuk": "btn_pupuk",
+    "menu_riwayat": "btn_riwayat"
 }
 
 
@@ -251,7 +387,7 @@ async def handle_whatsapp_event(request: Request, background_tasks: BackgroundTa
             elif inter_type == "list_reply":
                 list_id = interactive.get("list_reply", {}).get("id", "")
                 list_title = interactive.get("list_reply", {}).get("title", "")
-                extracted_text = INTERACTIVE_ACTION_MAP.get(list_id) or list_title or list_id
+                extracted_text = INTERACTIVE_ACTION_MAP.get(list_id) or list_id or list_title
         elif msg_type == "image":
             image_obj = msg_obj.get("image", {})
             media_id = image_obj.get("id")
@@ -262,7 +398,8 @@ async def handle_whatsapp_event(request: Request, background_tasks: BackgroundTa
                 process_incoming_message,
                 phone_number=sender_phone,
                 message_text=extracted_text,
-                media_id=media_id
+                media_id=media_id,
+                msg_id=msg_id
             )
 
         return {"status": "success", "message": "Event queued for processing"}
@@ -323,23 +460,45 @@ async def handle_waha_event(request: Request, background_tasks: BackgroundTasks)
         # 6. Ekstraksi Teks (Teks Biasa, Reply Buttons, atau List Message Row)
         message_text = payload.get("body", "") or ""
 
-        # Deteksi respons interaktif button reply
-        selected_btn = (
-            payload.get("selectedButtonId") or
-            payload.get("buttonReply", {}).get("id") or
-            payload.get("buttonReply", {}).get("title")
+        # Deteksi respons interaktif list reply (Prioritas utama ID, hindari teks gabungan judul+deskripsi di body)
+        list_reply_obj = (
+            payload.get("listReply") or
+            payload.get("list_reply") or
+            (payload.get("_data", {}).get("listResponse") if isinstance(payload.get("_data"), dict) else None) or
+            {}
         )
-        if selected_btn:
-            message_text = INTERACTIVE_ACTION_MAP.get(selected_btn) or selected_btn
-
-        # Deteksi respons interaktif list reply
-        selected_row = (
+        selected_row_id = (
             payload.get("selectedRowId") or
-            payload.get("listReply", {}).get("id") or
-            payload.get("listReply", {}).get("title")
+            (list_reply_obj.get("id") if isinstance(list_reply_obj, dict) else None) or
+            (list_reply_obj.get("rowId") if isinstance(list_reply_obj, dict) else None)
         )
-        if selected_row:
-            message_text = INTERACTIVE_ACTION_MAP.get(selected_row) or selected_row
+
+        # Deteksi respons interaktif button reply
+        btn_reply_obj = (
+            payload.get("buttonReply") or
+            payload.get("button_reply") or
+            {}
+        )
+        selected_btn_id = (
+            payload.get("selectedButtonId") or
+            (btn_reply_obj.get("id") if isinstance(btn_reply_obj, dict) else None)
+        )
+
+        if selected_row_id:
+            message_text = INTERACTIVE_ACTION_MAP.get(selected_row_id) or selected_row_id
+        elif selected_btn_id:
+            message_text = INTERACTIVE_ACTION_MAP.get(selected_btn_id) or selected_btn_id
+        else:
+            # Periksa jika body berupa teks list row atau button yang diklik
+            norm_body = re.sub(r"\s+", " ", message_text.lower()).strip()
+            clean_body = re.sub(r"[^\w\s]", "", norm_body).strip()
+            mapped = (
+                INTERACTIVE_ACTION_MAP.get(message_text.strip().lower()) or
+                INTERACTIVE_ACTION_MAP.get(norm_body) or
+                INTERACTIVE_ACTION_MAP.get(clean_body)
+            )
+            if mapped:
+                message_text = mapped
 
         # 7. Deteksi lampiran media
         media_id = None

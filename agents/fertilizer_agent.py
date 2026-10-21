@@ -86,10 +86,10 @@ Panduan Resmi:
 
 Kembalikan jawaban terstruktur dalam skema FertilizerRecommendationResult dengan takaran tepat, aman, dan aplikatif.
 """
-        candidate_models = ["gemini-flash-latest"]
+        candidate_models = ["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3.1-flash-lite"]
         if self.model_name and self.model_name.replace("models/", "") not in candidate_models:
             candidate_models.append(self.model_name.replace("models/", ""))
-        for m in ["gemini-3.5-flash", "gemini-3.8-flash"]:
+        for m in ["gemini-flash-latest", "gemini-3.5-flash", "gemini-3.8-flash"]:
             if m not in candidate_models:
                 candidate_models.append(m)
 

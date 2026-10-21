@@ -31,8 +31,9 @@ class DiagnosisAgent:
         if not self.client:
             return []
         try:
-            model = settings.embedding_model.replace("models/", "")
-            config = {"output_dimensionality": 768} if "gemini-embedding" in model else None
+            # Gunakan gemini-embedding-001 (768 dimensi) yang konsisten dengan vektor di database knowledge_base
+            model = "gemini-embedding-001"
+            config = {"output_dimensionality": 768}
             response = self.client.models.embed_content(
                 model=model,
                 contents=text,
@@ -71,8 +72,13 @@ class DiagnosisAgent:
                 logger.warning(f"Percobaan model '{model}' gagal: {e}. Mencoba model cadangan...")
         return None
 
-    async def diagnose_text(self, user_query: str, crop_hint: Optional[str] = None) -> DiseaseDiagnosisResult:
-        """Melakukan diagnosa berbasis teks dengan pencarian semantik RAG 11 Penyakit."""
+    async def diagnose_text(
+        self,
+        user_query: str,
+        crop_hint: Optional[str] = None,
+        conversation_history: Optional[str] = None
+    ) -> DiseaseDiagnosisResult:
+        """Melakukan diagnosa berbasis teks dengan pencarian semantik RAG 11 Penyakit dan memori percakapan multi-turn."""
         if not self.client:
             return DiseaseDiagnosisResult(
                 is_supported_crop=True,
@@ -91,7 +97,8 @@ class DiagnosisAgent:
             )
 
         # 1. RAG Retrieval via pgvector
-        query_vec = self._get_embedding(user_query)
+        rag_search_text = f"{user_query} {crop_hint or ''}".strip()
+        query_vec = self._get_embedding(rag_search_text)
         context_docs = []
         if query_vec:
             context_docs = await ConsultationRepository.match_knowledge(
@@ -115,15 +122,28 @@ class DiagnosisAgent:
                 for doc in context_docs
             ])
 
+        history_section = ""
+        if conversation_history:
+            history_section = (
+                f"\n\nRIWAYAT PERCAKAPAN & DIAGNOSIS SEBELUMNYA (MULTI-TURN CONTEXT MEMORY):\n"
+                f"{conversation_history}\n\n"
+                f"PETUNJUK MEMORI PERCAKAPAN:\n"
+                f"- Petani mungkin menanyakan kelanjutan atau detail dari konsultasi sebelumnya (misalnya: 'obatnya apa?', 'dosisnya berapa?', 'bagaimana cara semprotnya?').\n"
+                f"- Hubungkan jawaban dan rekomendasi secara koheren dengan tanaman ({crop_hint or 'Cabai/Padi'}) dan penyakit yang dibahas sebelumnya.\n"
+                f"- JANGAN menolak pertanyaan lanjutan petani sebagai tanaman tidak didukung bila percakapan sebelumnya membahas Cabai atau Padi."
+            )
+
         prompt = f"""\
 {SYSTEM_PROMPT_DIAGNOSIS}
 
 KONTEKS DATABASE RESMI (KNOWLEDGE BASE 11 PENYAKIT PADI & CABAI):
 {context_str if context_str else "Tidak ada dokumen spesifik yang persis sama, lakukan analisis agronomi objektif."}
+{history_section}
 
 ATURAN VALIDASI TANAMAN:
 - TaniPintar HANYA melayani tanaman CABAI (Capsicum annuum) dan PADI (Oryza sativa).
-- Jika pengguna menanyakan tanaman lain (misal: sawit, jagung, apel, durian) atau bukan tanaman, set `is_supported_crop=False`, berikan `unsupported_message` bahwa bot khusus Cabai & Padi, dan set `confidence_score=0.0`.
+- Jika pengguna menanyakan tanaman lain (misal: sawit, jagung, apel, durian) atau bukan tanaman sama sekali, set `is_supported_crop=False`, berikan `unsupported_message` bahwa bot khusus Cabai & Padi, dan set `confidence_score=0.0`.
+- Jika pertanyaan merupakan pertanyaan lanjutan dari konsultasi cabai/padi sebelumnya, tetap layani dengan `is_supported_crop=True`.
 
 PERTANYAAN / KELUHAN PETANI:
 "{user_query}"

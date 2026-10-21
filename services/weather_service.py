@@ -33,6 +33,8 @@ class WeatherService:
         "wates": ("34.01.01.2001", "Wates, Wates, Kulon Progo"),
         "garongan": ("34.01.02.2001", "Garongan / Panjatan, Kulon Progo"),
         "panjatan": ("34.01.02.2001", "Panjatan, Kulon Progo"),
+        "sentolo": ("34.01.07.2001", "Sentolo, Kulon Progo"),
+        "tuksono": ("34.01.07.2003", "Tuksono, Sentolo, Kulon Progo"),
         "gunungkidul": ("34.03.01.2001", "Wonosari, Wonosari, Gunungkidul"),
         "wonosari": ("34.03.01.2001", "Wonosari, Wonosari, Gunungkidul"),
 
@@ -58,6 +60,8 @@ class WeatherService:
         "kulonprogo": (-7.8286, 110.1585),
         "wates": (-7.8587, 110.1583),
         "garongan": (-7.9250, 110.1167),
+        "sentolo": (-7.8384, 110.2244),
+        "tuksono": (-7.8542, 110.2450),
         "gunungkidul": (-7.9625, 110.6033),
         "magelang": (-7.4797, 110.2177),
         "sawangan": (-7.5342, 110.3528),

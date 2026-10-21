@@ -1,4 +1,6 @@
+import json
 import uuid
+import numpy as np
 from typing import Any, Dict, List, Optional
 from database.supabase_client import get_supabase
 from core.logger import logger
@@ -16,14 +18,78 @@ def _is_valid_uuid(val: Any) -> bool:
 class ConsultationRepository:
     """Repository untuk berinteraksi dengan tabel database Supabase."""
 
-    @staticmethod
-    async def match_knowledge(
+    _kb_cache: Optional[List[Dict[str, Any]]] = None
+
+    @classmethod
+    def _get_local_kb_records(cls) -> List[Dict[str, Any]]:
+        """Mengambil dan meng-cache 11 record knowledge_base untuk fallback instan di RAM."""
+        if cls._kb_cache is not None:
+            return cls._kb_cache
+        supabase = get_supabase()
+        if not supabase:
+            return []
+        try:
+            res = supabase.table("knowledge_base").select("*").execute()
+            if res and res.data:
+                cls._kb_cache = res.data
+                logger.info(f"Berhasil memuat cache lokal {len(res.data)} data knowledge_base.")
+                return cls._kb_cache
+        except Exception as e:
+            logger.error(f"Gagal memuat cache knowledge_base dari Supabase: {e}")
+        return []
+
+    @classmethod
+    def _match_knowledge_fallback(
+        cls,
         query_embedding: List[float],
-        match_threshold: float = 0.60,
+        match_threshold: float = 0.50,
         match_count: int = 3,
         commodity: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        """Melakukan pencarian semantik vektor ke tabel knowledge_base via Supabase RPC."""
+        """Fallback pencarian cosine similarity lokal jika Supabase RPC bermasalah."""
+        records = cls._get_local_kb_records()
+        if not records or not query_embedding:
+            return []
+
+        q_vec = np.array(query_embedding, dtype=np.float32)
+        q_norm = np.linalg.norm(q_vec)
+        if q_norm == 0:
+            return []
+
+        results = []
+        for r in records:
+            if commodity and r.get("commodity", "").lower() != commodity.lower():
+                continue
+
+            raw_emb = r.get("embedding")
+            if not raw_emb:
+                continue
+
+            try:
+                emb = np.array(json.loads(raw_emb) if isinstance(raw_emb, str) else raw_emb, dtype=np.float32)
+                emb_norm = np.linalg.norm(emb)
+                if emb_norm == 0:
+                    continue
+                sim = float(np.dot(q_vec, emb) / (q_norm * emb_norm))
+                if sim >= match_threshold:
+                    item = dict(r)
+                    item["similarity"] = sim
+                    results.append(item)
+            except Exception as ex:
+                logger.debug(f"Gagal parse embedding baris KB id {r.get('id')}: {ex}")
+
+        results.sort(key=lambda x: x.get("similarity", 0.0), reverse=True)
+        return results[:match_count]
+
+    @classmethod
+    async def match_knowledge(
+        cls,
+        query_embedding: List[float],
+        match_threshold: float = 0.50,
+        match_count: int = 3,
+        commodity: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Melakukan pencarian semantik vektor ke tabel knowledge_base via Supabase RPC atau fallback lokal."""
         supabase = get_supabase()
         if not supabase:
             return []
@@ -35,10 +101,18 @@ class ConsultationRepository:
                 "filter_commodity": commodity.lower() if commodity else None
             }
             response = supabase.rpc("match_knowledge", params).execute()
-            return response.data or []
+            if response and response.data:
+                return response.data
         except Exception as e:
-            logger.error(f"Error saat menjalankan match_knowledge RPC: {e}")
-            return []
+            logger.warning(f"RPC match_knowledge belum siap ({e}). Menggunakan komputasi cosine lokal...")
+        
+        # Jalankan fallback cosine similarity lokal
+        return cls._match_knowledge_fallback(
+            query_embedding=query_embedding,
+            match_threshold=match_threshold,
+            match_count=match_count,
+            commodity=commodity
+        )
 
     @staticmethod
     async def save_consultation_audit(
@@ -79,7 +153,7 @@ class ConsultationRepository:
         supabase = get_supabase()
         if not supabase:
             return None
-        for table_name in ["user_sessions", "chat_sessions"]:
+        for table_name in ["chat_sessions", "user_sessions"]:
             try:
                 res = supabase.table(table_name).select("*").eq("phone_number", phone_number).maybe_single().execute()
                 if res and res.data:
@@ -101,7 +175,7 @@ class ConsultationRepository:
             "last_crop_context": last_crop_context,
             "updated_at": datetime.now(timezone.utc).isoformat()
         }
-        for table_name in ["user_sessions", "chat_sessions"]:
+        for table_name in ["chat_sessions", "user_sessions"]:
             try:
                 supabase.table(table_name).upsert(payload).execute()
                 return True
@@ -155,7 +229,7 @@ class ConsultationRepository:
 
     @staticmethod
     async def get_latest_market_prices(commodity: Optional[str] = None, province: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Mengambil data harga pasar terkini dari Supabase."""
+        """Mengambil data harga pasar terkini dari Supabase (hanya tanggal terbaru per komoditas & wilayah)."""
         supabase = get_supabase()
         if not supabase:
             return []
@@ -165,8 +239,18 @@ class ConsultationRepository:
                 query = query.ilike("commodity", f"%{commodity}%")
             if province:
                 query = query.ilike("province", f"%{province}%")
-            res = query.order("price_date", desc=True).limit(10).execute()
-            return res.data or []
+            res = query.order("price_date", desc=True).limit(30).execute()
+            data = res.data or []
+
+            # Deduplikasi agar hanya mengambil tanggal terbaru per (commodity, province)
+            seen = set()
+            latest_records = []
+            for item in data:
+                key = (item.get("commodity"), item.get("province"))
+                if key not in seen:
+                    seen.add(key)
+                    latest_records.append(item)
+            return latest_records
         except Exception as e:
             logger.error(f"Gagal mengambil data harga pasar: {e}")
             return []

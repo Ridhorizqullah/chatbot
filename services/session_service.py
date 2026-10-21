@@ -97,12 +97,14 @@ class SessionService:
     async def update_session_state(
         cls,
         phone_number: str,
-        step: str,
-        crop_context: Optional[str] = None
+        step: str = "main_menu",
+        crop_context: Optional[str] = None,
+        state_dict: Optional[Dict[str, Any]] = None
     ) -> bool:
         """Memperbarui posisi menu aktif (step) dan timestamp updated_at."""
+        final_state = state_dict if state_dict is not None else {"step": step}
         return await ConsultationRepository.upsert_session(
             phone_number=phone_number,
-            current_state={"step": step},
+            current_state=final_state,
             last_crop_context=crop_context
         )

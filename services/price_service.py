@@ -131,20 +131,29 @@ class PriceService:
 
         # Deteksi filter komoditas dari kueri (termasuk sub-varietas PIHPS)
         target_commodity = None
+        is_general_cabai = False
+        is_general_beras = False
+
         if "rawit hijau" in q_lower or "cabe hijau" in q_lower:
             target_commodity = "Cabai Rawit Hijau"
         elif "rawit" in q_lower:
             target_commodity = "Cabai Rawit Merah"
         elif "merah besar" in q_lower or "cabe besar" in q_lower:
             target_commodity = "Cabai Merah Besar"
-        elif "keriting" in q_lower or "cabe merah" in q_lower or "cabai merah" in q_lower:
+        elif "keriting" in q_lower:
             target_commodity = "Cabai Merah Keriting"
+        elif "cabai" in q_lower or "cabe" in q_lower:
+            target_commodity = "Cabai"
+            is_general_cabai = True
         elif "gabah" in q_lower or "gkp" in q_lower:
             target_commodity = "Gabah Kering Panen (GKP)"
         elif "super" in q_lower:
             target_commodity = "Beras Kualitas Super I"
-        elif "beras" in q_lower:
+        elif "medium" in q_lower:
             target_commodity = "Beras Kualitas Medium I"
+        elif "beras" in q_lower or "padi" in q_lower:
+            target_commodity = "Beras"
+            is_general_beras = True
 
         # Deteksi wilayah fokus kustomisasi (Jogja & Magelang)
         target_region = None
@@ -152,7 +161,7 @@ class PriceService:
             target_region = "Sleman (DIY)"
         elif "bantul" in q_lower:
             target_region = "Bantul (DIY)"
-        elif "kulon progo" in q_lower or "garongan" in q_lower or "wates" in q_lower:
+        elif "kulon progo" in q_lower or "kulonprogo" in q_lower or "garongan" in q_lower or "wates" in q_lower:
             target_region = "Kulon Progo (DIY)"
         elif "sawangan" in q_lower or "muntilan" in q_lower or "ngablak" in q_lower:
             target_region = "Sawangan / Muntilan (Magelang)"
@@ -162,23 +171,42 @@ class PriceService:
             target_region = "D.I. Yogyakarta"
 
         # 1. Coba ambil dari Supabase market_prices (yang telah di-seed dengan data riil PIHPS)
+        search_province = "Magelang (Jawa Tengah)" if target_region and "Magelang" in target_region else "D.I. Yogyakarta"
         db_records = await ConsultationRepository.get_latest_market_prices(
             commodity=target_commodity,
-            province="Magelang (Jawa Tengah)" if target_region and "Magelang" in target_region else "D.I. Yogyakarta"
+            province=search_province
         )
 
         items: List[CommodityPriceItem] = []
 
         if db_records:
+            # Eliminasi duplikasi komoditas agregat jika varietas spesifik sudah tersedia
+            excluded_aggregates = {"Cabai Rawit", "Cabai Merah", "Beras"} if (is_general_cabai or is_general_beras) else set()
+            
             for rec in db_records:
+                comm_name = rec.get("commodity", "Komoditas")
+                if comm_name in excluded_aggregates:
+                    continue
+
+                # Kustomisasi info pasar lokal berdasarkan target_region
+                local_market = None
+                if target_region:
+                    local_market = cls.COMMODITY_BASELINES.get(comm_name, {}).get("markets", {}).get(target_region)
+
+                tips = rec.get("notes") or "Acuan riil Pusat Informasi Harga Pangan Strategis (PIHPS) Bank Indonesia."
+                if local_market:
+                    tips = f"[{local_market}] {tips}"
+
+                display_region = target_region or rec.get("province", "D.I. Yogyakarta")
+
                 items.append(CommodityPriceItem(
-                    komoditas=rec.get("commodity", "Komoditas"),
-                    provinsi=rec.get("province", target_region or "D.I. Yogyakarta & Magelang"),
+                    komoditas=comm_name,
+                    provinsi=display_region,
                     harga_petani=rec.get("farmgate_price", 0),
                     harga_pasar=rec.get("consumer_price", 0),
                     satuan=rec.get("unit", "kg"),
                     tanggal=rec.get("price_date", today_str),
-                    tips_negosiasi=rec.get("notes") or "Acuan riil Pusat Informasi Harga Pangan Strategis (PIHPS) Bank Indonesia."
+                    tips_negosiasi=tips
                 ))
             sumber = "Laporan Riil PIHPS Bank Indonesia (Pasar Tradisional DIY-Jateng) via Supabase"
         else:

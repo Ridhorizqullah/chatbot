@@ -27,8 +27,8 @@ class CVPreprocessor:
     4. Ekstraksi petunjuk organ tanaman (daun, buah, tanaman utuh).
     """
 
-    # Ambang batas variansi Laplacian untuk mendeteksi blur
-    BLUR_THRESHOLD: float = 75.0
+    # Ambang batas variansi Laplacian untuk mendeteksi blur (dikalibrasi 35.0 untuk kompresi WhatsApp)
+    BLUR_THRESHOLD: float = 35.0
 
     # Ambang batas minimal luas area warna tanaman (10%)
     MIN_PLANT_COVERAGE: float = 0.08
