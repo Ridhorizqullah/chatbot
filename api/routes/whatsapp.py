@@ -96,12 +96,18 @@ async def process_incoming_message(
 
         if should_reset:
             tracker.start_phase("waha_delivery")
-            # FUNGSI PESAN TUNGGAL (Mencegah double message): Sapaan ramah + menu dalam 1 balasan utuh
+            # FUNGSI PESAN TUNGGAL: Sapaan ramah + menu + alert timeout sesi jika inaktif > 30 menit
+            alert_notice = (
+                "⏰ *PEMBERITAHUAN SESI:*\n"
+                "Sesi konsultasi Anda sebelumnya telah di-reset otomatis karena tidak aktif selama lebih dari 30 menit. "
+                "Silakan pilih menu layanan di bawah untuk memulai sesi baru."
+            ) if reset_reason == "session_timeout" else None
+
             await whatsapp_service.send_welcome_menu(
                 to_phone=phone_number,
                 session=session,
                 reply_to=msg_id,
-                prefix_notice=None
+                prefix_notice=alert_notice
             )
             tracker.end_phase("waha_delivery")
             tracker.log_summary(has_media=bool(media_id))

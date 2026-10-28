@@ -5,6 +5,15 @@ from core.logger import logger
 from agents.schemas import FertilizerRecommendationResult
 
 
+import json
+import os
+from typing import Optional, Dict, Any
+from google import genai
+from core.config import settings
+from core.logger import logger
+from agents.schemas import FertilizerRecommendationResult
+
+
 class FertilizerAgent:
     """Agent penghitung dan perekomendasi pupuk & pestisida spesifik untuk Cabai dan Padi."""
 
@@ -16,59 +25,74 @@ class FertilizerAgent:
         else:
             self.client = None
 
+        self.catalog = self._load_catalog()
+
+    def _load_catalog(self) -> Dict[str, Any]:
+        """Memuat dataset katalog pupuk dan pestisida berimbang dari file JSON."""
+        catalog_path = os.path.join(
+            os.path.dirname(__file__), "..", "data", "knowledge", "fertilizer_pesticide_catalog.json"
+        )
+        try:
+            if os.path.exists(catalog_path):
+                with open(catalog_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+        except Exception as e:
+            logger.warning(f"Gagal memuat katalog pupuk dari {catalog_path}: {e}")
+        return {}
+
     def get_recommendation(self, query: str, crop_hint: Optional[str] = None) -> FertilizerRecommendationResult:
         """Menghasilkan rekomendasi pupuk dan pestisida terstruktur berdasarkan pertanyaan petani."""
-        crop = "padi" if (crop_hint and "padi" in crop_hint.lower()) or ("padi" in query.lower() or "gabah" in query.lower() or "sawah" in query.lower()) else "cabai"
-        is_generatif = any(w in query.lower() for w in ["bunga", "buah", "malai", "bunting", "panen", "rontok", "generatif"])
-        fase = "Generatif (Pembungaan / Pembuahan / Pengisian Bulir)" if is_generatif else "Vegetatif (Pertumbuhan Daun & Tunas / Anakan)"
+        q_lower = query.lower()
+        crop = "padi" if (crop_hint and "padi" in crop_hint.lower()) or ("padi" in q_lower or "gabah" in q_lower or "sawah" in q_lower or "beras" in q_lower) else "cabai"
 
-        # Standar agronomi resmi Kementerian Pertanian
+        # Identifikasi fase tanaman spesifik berbasis aturan linguistik agronomi
         if crop == "cabai":
-            if is_generatif:
-                rekomendasi = [
-                    "KNO3 Putih (Kalium Nitrat): 3-5 kg per 200 liter air (kocor 200 ml/tanaman tiap minggu) untuk bobot dan ketahanan kulit buah.",
-                    "MKP (Mono Kalium Fosfat): 3-5 gram/liter semprot daun untuk memperkuat tangkai bunga agar tidak rontok.",
-                    "Kalsium Boron (CaB): 2 gram/liter semprot seminggu sekali untuk mencegah busuk ujung buah (blossom end rot) dan patek."
-                ]
-                unsur = "Kalium (K), Fosfat (P), Kalsium (Ca), dan Boron (B)"
-                pestisida = "Fungisida Mankozeb (kontak) selang-seling Difenokonazol (sistemik) bila cuaca sering gerimis."
-                aplikasi = "Aplikasi kocor pada pagi hari setelah bedengan basah, dan semprot pupuk daun pukul 07.00 - 09.00."
+            if any(w in q_lower for w in ["bibit", "semai", "persemaian", "pindah tanam", "polybag", "0 hst", "10 hst", "15 hst"]):
+                fase_key = "fase_bibit"
+            elif any(w in q_lower for w in ["bunga", "rontok bunga", "pentil", "bakal buah", "kuncup", "mekar"]):
+                fase_key = "fase_bunga"
+            elif any(w in q_lower for w in ["buah", "panen", "matang", "petik", "merah", "bobot", "patek", "busuk buah"]):
+                fase_key = "fase_buah"
             else:
-                rekomendasi = [
-                    "Pupuk NPK 16-16-16 (Mutiara/YaraMila): 2-3 kg per 200 liter air, kocor 150 ml per lubang tanam tiap 7-10 hari.",
-                    "Asam Humat: 1-2 gram/liter kocor bersamaan NPK untuk memacu perakaran baru.",
-                    "Pupuk Daun Tinggi Nitrogen & Magnesium (Mg): 2 gram/liter semprot interval 7 hari untuk warna daun hijau pekat."
-                ]
-                unsur = "Nitrogen (N) berimbang, Fosfat (P), dan Magnesium (Mg)"
-                pestisida = "Insektisida Abamektin (0.5 ml/liter) jika ada gejala serangan thrips daun keriting."
-                aplikasi = "Kocor merata di sekitar lingkar tajuk tanaman, hindari mengenai batang utama secara langsung."
+                fase_key = "fase_vegetatif"
         else:
             # Padi
-            if is_generatif:
-                rekomendasi = [
-                    "Pemupukan Susulan II (Fase Bunting 35-45 HST): NPK Phonska 100 kg/ha + KCl (Kalium Klorida) 50 kg/ha.",
-                    "Silika Cair (Si) + Pupuk Kalium Cair: Semprot daun saat bunting tua untuk memperkuat tangkai malai dan mencegah patah leher (blas leher).",
-                    "Stop total aplikasi pupuk Urea (Nitrogen) murni saat padi mulai keluar malai."
-                ]
-                unsur = "Kalium (K) dan Silika (Si)"
-                pestisida = "Fungisida bahan aktif Trisiklazol atau Difenokonazol saat padi bunting 5% dan bunting 70%."
-                aplikasi = "Taburkan pupuk saat macak-macak (tanah lembap basah, jangan tergenang air dalam)."
+            if any(w in q_lower for w in ["benih", "semai", "persemaian", "olah tanah", "dasar", "singkal", "keong"]):
+                fase_key = "fase_persemaian"
+            elif any(w in q_lower for w in ["bunting", "primordia", "kebuntingan", "leher", "malai keluar", "blas leher", "35 hst", "45 hst"]):
+                fase_key = "fase_bunting"
+            elif any(w in q_lower for w in ["panen", "bernas", "gabah", "pengisian", "merunduk", "kuning", "walang sangit", "wbc"]):
+                fase_key = "fase_malai_panen"
             else:
-                rekomendasi = [
-                    "Pemupukan Dasar (0-7 HST): NPK Phonska 150 kg/ha + Urea 50 kg/ha.",
-                    "Pemupukan Susulan I (21 HST): Urea 100 kg/ha + SP-36 / NPK 50 kg/ha untuk memicu anakan produktif maksimum."
-                ]
-                unsur = "Nitrogen (N) dan Fosfat (P)"
-                pestisida = "Insektisida butiran Karbofuran 3GR (15-20 kg/ha) bila tampak ngengat penggerek batang sundep."
-                aplikasi = "Tabur merata di petakan sawah saat air dangkal 2-3 cm, lalu biarkan 3 hari tanpa membuang air irigasi."
+                fase_key = "fase_vegetatif"
+
+        # Ambil data agronomi dari katalog
+        crop_data = self.catalog.get(crop, {})
+        phase_data = crop_data.get(fase_key, {})
+
+        fase_display = phase_data.get("rentang_hst", fase_key.replace("_", " ").title())
+        unsur = phase_data.get("unsur_prioritas", "Nutrisi makro N-P-K berimbang dan mikro")
+        rekomendasi = phase_data.get("rekomendasi_pupuk", [
+            "NPK 16-16-16 dosis anjuran kocor pada pagi hari.",
+            "Asam humat untuk pembenah tanah dan perakaran.",
+            "Pupuk daun mikro semprot interval 7-10 hari."
+        ])
+
+        pht_info = phase_data.get("pestisida_dan_pht", {})
+        pestisida_text = (
+            f"🌱 *Pilihan Hayati/Organik:* {pht_info.get('organik_hayati', '-')}\n"
+            f"🛡️ *Rotasi Kimiawi Terdaftar:* {pht_info.get('kimia_rotasi', '-')}\n"
+            f"⚠️ *Panduan MoA / Resistensi:* {pht_info.get('anjuran_rotasi', '-')}"
+        )
+        aplikasi = phase_data.get("catatan_aplikasi", "Aplikasi pagi hari saat tanah lembap. Perhatikan arah angin saat penyemprotan.")
 
         if not self.client:
             return FertilizerRecommendationResult(
                 nama_tanaman=crop,
-                fase_pertumbuhan=fase,
+                fase_pertumbuhan=fase_display,
                 rekomendasi_pupuk=rekomendasi,
                 unsur_prioritas=unsur,
-                pestisida_pendamping=pestisida,
+                pestisida_pendamping=pestisida_text,
                 catatan_aplikasi=aplikasi
             )
 
@@ -76,15 +100,23 @@ class FertilizerAgent:
 Anda adalah pakar nutrisi tanaman pangan dan hortikultura di Indonesia.
 Petani bertanya seputar pupuk/pestisida: "{query}"
 Target Tanaman: {crop.upper()}
-Fase: {fase}
+Fase Pertumbuhan Terdeteksi: {fase_display}
 
-Panduan Resmi:
-- Rekomendasi: {rekomendasi}
-- Unsur: {unsur}
-- Pestisida: {pestisida}
+Panduan Standar Agronomi Resmi (Katalog PHT Kementan):
+- Unsur Prioritas: {unsur}
+- Opsi Pupuk: {rekomendasi}
+- Proteksi Tanaman (PHT Hayati & Kimia Terdaftar):
+  * Hayati: {pht_info.get('organik_hayati')}
+  * Kimia Rotasi: {pht_info.get('kimia_rotasi')}
+  * MoA/Resistensi: {pht_info.get('anjuran_rotasi')}
 - Cara Aplikasi: {aplikasi}
 
-Kembalikan jawaban terstruktur dalam skema FertilizerRecommendationResult dengan takaran tepat, aman, dan aplikatif.
+PETUNJUK KHUSUS (NON-TEMPLATE & BERIMBANG):
+1. Sesuaikan jawaban dengan fokus pertanyaan petani. JANGAN copy-paste mentah tanpa konteks.
+2. Selalu seimbangkan opsi agens hayati (Trichoderma/Beauveria/PGPR) dan opsi bahan aktif kimiawi.
+3. Cantumkan takaran aplikatif yang jelas (misal: per tangki semprot standar 16 Liter, atau per drum 200 Liter).
+4. Tekankan rotasi bahan aktif (MoA / FRAC / IRAC) agar hama/patogen tidak resisten.
+5. Kembalikan dalam format JSON terstruktur skema FertilizerRecommendationResult.
 """
         candidate_models = ["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3.1-flash-lite"]
         if self.model_name and self.model_name.replace("models/", "") not in candidate_models:
@@ -111,9 +143,9 @@ Kembalikan jawaban terstruktur dalam skema FertilizerRecommendationResult dengan
 
         return FertilizerRecommendationResult(
             nama_tanaman=crop,
-            fase_pertumbuhan=fase,
+            fase_pertumbuhan=fase_display,
             rekomendasi_pupuk=rekomendasi,
             unsur_prioritas=unsur,
-            pestisida_pendamping=pestisida,
+            pestisida_pendamping=pestisida_text,
             catatan_aplikasi=aplikasi
         )

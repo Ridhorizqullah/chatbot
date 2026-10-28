@@ -89,9 +89,13 @@ async def router_node(state: TaniState) -> Dict[str, Any]:
             logger.debug(f"Gagal cek status sesi pertama kali: {e}")
             is_first_time = False
 
-    # Deteksi konteks tanaman (Cabai vs Padi), pertahankan konteks dari sesi bila ada
+    # USER CONTEXT PRIORITY PRINCIPLE: Argumentasi & koreksi langsung user diprioritaskan
     detected_crop = state.get("crop_context")
-    if "cabai" in msg or "cabe" in msg:
+    if any(k in msg for k in ["bukan cabai", "bukan cabe", "padi bukan"]):
+        detected_crop = "padi"
+    elif any(k in msg for k in ["bukan padi", "cabai bukan", "cabe bukan"]):
+        detected_crop = "cabai"
+    elif "cabai" in msg or "cabe" in msg:
         detected_crop = "cabai"
     elif "padi" in msg or "gabah" in msg or "sawah" in msg or "beras" in msg:
         detected_crop = "padi"
@@ -595,6 +599,9 @@ async def price_prompt_node(state: TaniState) -> Dict[str, Any]:
     return {"final_response": prompt_text}
 
 
+FOOTER_MENU_HINT = "\n\n💡 Ketik *menu* kapan saja untuk opsi bantuan lain. Ketik *'menu'* kapan saja jika ingin kembali ke halaman utama."
+
+
 async def price_region_prompt_node(state: TaniState) -> Dict[str, Any]:
     """Mengarahkan petani memilih wilayah pasar sentra untuk komoditas terpilih."""
     crop = state.get("crop_context") or "Cabai"
@@ -609,7 +616,7 @@ async def price_region_prompt_node(state: TaniState) -> Dict[str, Any]:
         f"5. *Magelang* (Pasar Rejowinangun & Lelang Sayur Muntilan/Sawangan)\n\n"
         f"Silakan ketik nama daerah Anda (contoh: *Bantul* atau *Sleman*), atau klik tombol di bawah."
     )
-    return {"final_response": prompt_text}
+    return {"final_response": prompt_text + FOOTER_MENU_HINT}
 
 
 async def weather_prompt_node(state: TaniState) -> Dict[str, Any]:
@@ -634,9 +641,6 @@ async def fertilizer_prompt_node(state: TaniState) -> Dict[str, Any]:
         "Saya akan bantu hitungkan takaran dosis anjuran dan cara aplikasi yang tepat dan aman. 🌾"
     )
     return {"final_response": prompt_text}
-
-
-FOOTER_MENU_HINT = "\n\n💡 Ketik *menu* kapan saja untuk opsi bantuan lain. Ketik *'menu'* kapan saja jika ingin kembali ke halaman utama."
 
 
 async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
@@ -764,6 +768,14 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
         ref_image_url = diag.get("visual_reference_url") or await ConsultationRepository.get_reference_image(diag.get("nama_penyakit", ""))
         ref_section = f"\n\n📷 *Foto Pembanding Referensi (Supabase Storage):*\n{ref_image_url}" if ref_image_url else ""
 
+        # Penentuan Klasifikasi Tingkat Keparahan / Skala Risiko
+        if confidence >= 0.85:
+            severity_label = "Gejala Khas / Tingkat Keparahan Nyata"
+        elif confidence >= 0.70:
+            severity_label = "Indikasi Awal / Tingkat Keparahan Moderat"
+        else:
+            severity_label = "Gejala Awal Ambigu / Butuh Observasi Lapangan"
+
         # Peringatan PPL jika deskripsi petani singkat/ambigu (tingkat keyakinan moderat)
         ppl_warning = ""
         if confidence < settings.confidence_threshold or rujuk_ppl:
@@ -774,12 +786,27 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
                 f"atau mengonfirmasi ke PPL setempat sebelum aplikasi kimiawi berat."
             )
 
+        header_title = (
+            f"🔍 *SKRINING AWAL VISUAL ({diag.get('nama_tanaman', '').upper()})*{photo_info}\n_(Klasifikasi Pendukung Keputusan Agronomi)_"
+            if state.get("media_url") else
+            f"🌿 *HASIL DIAGNOSIS TANAMAN ({diag.get('nama_tanaman', '').upper()})*{photo_info}"
+        )
+
+        disclaimer_box = (
+            "\n\n⚖️ *Pernyataan Batasan Klasifikasi (Disclaimer):*\n"
+            "_Hasil analisis ini merupakan skrining awal agronomi pendukung keputusan (decision-support) "
+            "berdasarkan pola visual citra dan SOP Kementan, bukan pengujian laboratorium patologi definitif. "
+            "Untuk kepastian serangan patogen berskala hamparan luas, selalu konfirmasikan ke Petugas Penyuluh "
+            "Lapangan (PPL) atau laboratorium BPTP setempat sebelum aplikasi kimiawi berat._"
+        )
+
         msg = (
-            f"🌿 *HASIL DIAGNOSIS TANAMAN ({diag.get('nama_tanaman', '').upper()})*{photo_info}\n\n"
+            f"{header_title}\n\n"
             f"🎯 *Indikasi:* {diag.get('nama_penyakit')} "
             f"({diag.get('nama_ilmiah') or 'Patogen'})\n"
             f"🔬 *Penyebab:* {diag.get('penyebab_biologis')}\n"
             f"📊 *Tingkat Keyakinan AI:* {int(confidence * 100)}%\n"
+            f"📈 *Taraf Serangan:* {severity_label}\n"
             f"{visual_rag_info}\n"
             f"📝 *Penjelasan Gejala:*\n{diag.get('penjelasan_singkat')}\n\n"
             f"🛠️ *LANGKAH PENANGANAN PRAKTIS (3 PILAR):*\n"
@@ -788,7 +815,8 @@ async def format_and_guardrail_node(state: TaniState) -> Dict[str, Any]:
             f"3. *Bahan Aktif Kimiawi:*\n   {langkah.get('bahan_aktif_kimiawi') or 'Tidak diperlukan bahan kimiawi.'}\n\n"
             f"⚠️ *Catatan Keselamatan:*\n{diag.get('catatan_keamanan')}"
             f"{ppl_warning}"
-            f"{ref_section}\n\n"
+            f"{ref_section}"
+            f"{disclaimer_box}\n\n"
             f"_Apabila gejala tidak membaik dalam 3-5 hari, segera hubungi PPL setempat._"
         )
         return {"final_response": welcome_banner + msg + FOOTER_MENU_HINT}

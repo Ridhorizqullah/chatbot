@@ -14,6 +14,7 @@ class CVQualityResult:
     is_plant: bool
     plant_coverage: float
     organ_hint: str  # 'buah', 'daun', 'tanaman_utuh', atau 'tidak_diketahui'
+    brightness_score: float = 128.0
     rejection_reason: Optional[str] = None
 
 
@@ -21,17 +22,25 @@ class CVPreprocessor:
     """
     Service prapemrosesan citra pertanian menggunakan OpenCV.
     Berfungsi sebagai gatekeeper ringan (CPU < 15ms) sebelum pemanggilan model AI berat:
-    1. Memvalidasi integritas data biner citra.
+    1. Memvalidasi integritas data biner citra dan resolusi minimal.
     2. Deteksi foto kabur/goyang (Laplacian variance test).
-    3. Segmentasi warna HSV untuk memastikan objek adalah tanaman/daun/buah.
-    4. Ekstraksi petunjuk organ tanaman (daun, buah, tanaman utuh).
+    3. Deteksi kecerahan ekstrem (terlalu gelap gulita atau overexposed).
+    4. Segmentasi warna HSV untuk memastikan objek adalah tanaman/daun/buah.
+    5. Ekstraksi petunjuk organ tanaman (daun, buah, tanaman utuh).
     """
 
     # Ambang batas variansi Laplacian untuk mendeteksi blur (dikalibrasi 35.0 untuk kompresi WhatsApp)
     BLUR_THRESHOLD: float = 35.0
 
-    # Ambang batas minimal luas area warna tanaman (10%)
+    # Ambang batas minimal luas area warna tanaman (8%)
     MIN_PLANT_COVERAGE: float = 0.08
+
+    # Ambang batas resolusi minimal untuk deteksi lesi patogen
+    MIN_DIMENSION: int = 200
+
+    # Ambang batas iluminasi/kecerahan rata-rata (skala 0 - 255)
+    MIN_BRIGHTNESS: float = 30.0
+    MAX_BRIGHTNESS: float = 242.0
 
     @classmethod
     def inspect_image(cls, image_bytes: bytes) -> CVQualityResult:
@@ -46,6 +55,7 @@ class CVPreprocessor:
                 is_plant=False,
                 plant_coverage=0.0,
                 organ_hint="tidak_diketahui",
+                brightness_score=0.0,
                 rejection_reason="File foto kosong atau data citra rusak."
             )
 
@@ -62,11 +72,29 @@ class CVPreprocessor:
                     is_plant=False,
                     plant_coverage=0.0,
                     organ_hint="tidak_diketahui",
+                    brightness_score=0.0,
                     rejection_reason="Format citra tidak didukung atau file terkorupsi."
                 )
 
-            # Optimasi ukuran jika foto terlalu besar (resize dengan tetap menjaga aspek rasio)
             h, w = img_bgr.shape[:2]
+
+            # 2. Pengecekan Resolusi Minimal
+            if h < cls.MIN_DIMENSION or w < cls.MIN_DIMENSION:
+                return CVQualityResult(
+                    is_valid=False,
+                    is_blurry=False,
+                    blur_score=100.0,
+                    is_plant=False,
+                    plant_coverage=0.0,
+                    organ_hint="tidak_diketahui",
+                    brightness_score=128.0,
+                    rejection_reason=(
+                        f"Resolusi foto terlalu rendah ({w}x{h} px, minimal {cls.MIN_DIMENSION}x{cls.MIN_DIMENSION} px). "
+                        "Mohon ambil foto dengan jarak lebih dekat agar detail penyakit terlihat jelas."
+                    )
+                )
+
+            # Optimasi ukuran jika foto terlalu besar (resize dengan tetap menjaga aspek rasio)
             max_dim = 1024
             if max(h, w) > max_dim:
                 scale = max_dim / max(h, w)
@@ -75,8 +103,41 @@ class CVPreprocessor:
 
             total_pixels = h * w
 
-            # 2. Deteksi Blur menggunakan Laplacian Operator
+            # 3. Pengecekan Kecerahan / Iluminasi
             gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+            mean_brightness = float(np.mean(gray))
+
+            if mean_brightness < cls.MIN_BRIGHTNESS:
+                return CVQualityResult(
+                    is_valid=False,
+                    is_blurry=False,
+                    blur_score=0.0,
+                    is_plant=False,
+                    plant_coverage=0.0,
+                    organ_hint="tidak_diketahui",
+                    brightness_score=round(mean_brightness, 1),
+                    rejection_reason=(
+                        f"Foto terdeteksi terlalu gelap (tingkat kecerahan: {mean_brightness:.1f} < {cls.MIN_BRIGHTNESS}). "
+                        "Mohon ambil foto di tempat yang lebih terang atau gunakan lampu kilat (flash)."
+                    )
+                )
+
+            if mean_brightness > cls.MAX_BRIGHTNESS:
+                return CVQualityResult(
+                    is_valid=False,
+                    is_blurry=False,
+                    blur_score=0.0,
+                    is_plant=False,
+                    plant_coverage=0.0,
+                    organ_hint="tidak_diketahui",
+                    brightness_score=round(mean_brightness, 1),
+                    rejection_reason=(
+                        f"Foto terdeteksi terlalu silau / overexposed (tingkat kecerahan: {mean_brightness:.1f} > {cls.MAX_BRIGHTNESS}). "
+                        "Mohon hindari sorotan cahaya langsung pada kamera saat memotret."
+                    )
+                )
+
+            # 4. Deteksi Blur menggunakan Laplacian Operator
             laplacian = cv2.Laplacian(gray, cv2.CV_64F)
             blur_score = float(laplacian.var())
             is_blurry = blur_score < cls.BLUR_THRESHOLD
@@ -89,6 +150,7 @@ class CVPreprocessor:
                     is_plant=False,
                     plant_coverage=0.0,
                     organ_hint="tidak_diketahui",
+                    brightness_score=round(mean_brightness, 1),
                     rejection_reason=(
                         f"Foto terdeteksi buram atau goyang (skor fokus: {blur_score:.1f} < {cls.BLUR_THRESHOLD}). "
                         "Mohon ambil foto ulang dengan pencahayaan cukup dan fokus stabil pada bagian tanaman yang sakit."

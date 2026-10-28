@@ -1,0 +1,126 @@
+{
+  "cabai": {
+    "fase_bibit": {
+      "rentang_hst": "0 - 15 HST (Persemaian & Adaptasi Pindah Tanam)",
+      "unsur_prioritas": "Fosfat (P), Asam Humat, dan Agens Hayati Perakaran",
+      "rekomendasi_pupuk": [
+        "Aplikasi Asam Humat (1-2 g/liter air) saat kocor lubang tanam untuk percepat recovery akar setelah transplanting.",
+        "Pupuk Hayati PGPR (Plant Growth-Promoting Rhizobacteria) atau Trichoderma cair (5 ml/liter) kocor 3 hari sebelum tanam.",
+        "NPK 16-16-16 dosis sangat ringan (1 g/liter air) mulai diberikan pada 10 HST jika bibit sudah tegak segar."
+      ],
+      "pestisida_dan_pht": {
+        "organik_hayati": "Trichoderma harzianum kocor perakaran untuk mencegah rebah semai (damping-off/Pythium).",
+        "kimia_rotasi": "Jika ada serangan ulat daun: Bacillus thuringiensis (hayati) diselingi Emamektin Benzoat 5 SG (0.3 g/liter).",
+        "anjuran_rotasi": "Hindari aplikasi fungisida tembaga pada bibit muda karena berisiko fitotoksik (daun gosong)."
+      },
+      "catatan_aplikasi": "Kocor 100 ml per lubang tanam pada pagi hari. Jaga kelembapan tanah agar tidak menggenang."
+    },
+    "fase_vegetatif": {
+      "rentang_hst": "15 - 35 HST (Pertumbuhan Batang, Cabang, dan Daun)",
+      "unsur_prioritas": "Nitrogen (N) Berimbang, Fosfat (P), dan Magnesium (Mg)",
+      "rekomendasi_pupuk": [
+        "Pupuk NPK 16-16-16 (Mutiara/YaraMila): 2.5 kg per 200 liter drum air, kocor 150-200 ml per tanaman interval 7-10 hari.",
+        "Asam Amino + Magnesium Sulfat (MgSO4): 1.5-2 g/liter semprot daun pada umur 20 dan 30 HST agar daun hijau tebal dan tahan stres.",
+        "Kalsium Nitrat (CNG): 2 g/liter kocor terpisah dari NPK untuk menguatkan dinding sel batang dan percabangan."
+      ],
+      "pestisida_dan_pht": {
+        "organik_hayati": "Beauveria bassiana (5 g/liter) semprot sore hari untuk menekan populasi kutu kebul (vektor virus gemini) dan thrips.",
+        "kimia_rotasi": "Insektisida Thrips/Kutu: Selang-seling Abamektin 18 EC (0.5 ml/L, MoA 6) dengan Spinetoram 120 SC (0.4 ml/L, MoA 5) atau Imidakloprid (MoA 4A).",
+        "anjuran_rotasi": "Ganti golongan insektisida setiap 2 kali aplikasi berturut-turut untuk mencegah resistensi thrips daun keriting."
+      },
+      "catatan_aplikasi": "Kocor di lingkar tajuk luar tanaman (10-15 cm dari batang utama). Semprot daun pukul 06.30 - 08.30 pagi."
+    },
+    "fase_bunga": {
+      "rentang_hst": "35 - 55 HST (Inisiasi Bunga dan Pentil Buah)",
+      "unsur_prioritas": "Fosfat Tinggi (P), Kalium (K), Boron (B), dan Kalsium (Ca)",
+      "rekomendasi_pupuk": [
+        "MKP (Mono Kalium Fosfat - 0:52:34): 3-4 g/liter semprot daun tiap 7 hari untuk merangsang bunga serempak dan mencegah rontok.",
+        "Kalsium Boron (CaB): 2 g/liter semprot selang-seling dengan MKP untuk memperkokoh tangkai bunga dan mencegah busuk pantat buah (BER).",
+        "KNO3 Putih (13-0-45): 3 kg per 200 liter air kocor rutin 200 ml/tanaman seminggu sekali."
+      ],
+      "pestisida_dan_pht": {
+        "organik_hayati": "Pasang perangkap kuning berperekat (yellow sticky trap) 20-30 buah/ha untuk menangkap lalat buah jantan dan kutu daun.",
+        "kimia_rotasi": "Pencegahan Antraknosa Bunga: Fungisida kontak Mankozeb 80 WP (2 g/L, FRAC M03) selang-seling Difenokonazol 250 EC (0.5 ml/L, FRAC 3).",
+        "anjuran_rotasi": "Jangan gunakan insektisida berspektrum luas saat jam mekar bunga (pukul 07.00-10.00) agar serangga penyerbuk tidak mati."
+      },
+      "catatan_aplikasi": "Pastikan bedengan lembap sebelum kocor. Hindari menyemprot pupuk daun saat matahari terik di atas 32°C."
+    },
+    "fase_buah": {
+      "rentang_hst": "55 - 100+ HST (Pembesaran Buah, Pematangan, dan Panen)",
+      "unsur_prioritas": "Kalium Tinggi (K), Silika (Si), dan Kalsium Terlarut",
+      "rekomendasi_pupuk": [
+        "KNO3 Putih + Kalium Sulfat (ZK): 4 kg per 200 liter air kocor 200 ml/tanaman untuk memaksimalkan bobot, tebal daging buah, dan kilau merah.",
+        "Silika Cair (Si) 2 ml/liter semprot daun tiap 10 hari untuk mengeraskan epidermis kulit buah agar tidak mudah ditembus larva lalat buah.",
+        "Kalsium cair bebas nitrogen: 2-3 ml/liter semprot untuk mencegah buah cabai pecah (cracking) saat perubahan cuaca mendadak."
+      ],
+      "pestisida_dan_pht": {
+        "organik_hayati": "Petik dan musnahkan (kubur/bakar) buah yang terserang patek atau busuk lalat buah, jangan dibiarkan membusuk di bedengan.",
+        "kimia_rotasi": "Antraknosa / Patek Buah: Azoksistrobin + Difenokonazol (sistemik) diselingi Tembaga Oksiklorida / Hidroksida (kontak pelindung permukaan).",
+        "anjuran_rotasi": "Patuhi Pre-Harvest Interval (PHI) minimal 3-5 hari sebelum pemetikan panen cabai."
+      },
+      "catatan_aplikasi": "Lakukan pemetikan buah matang secara teratur setiap 3-5 hari sekali untuk merangsang munculnya bunga baru."
+    }
+  },
+  "padi": {
+    "fase_persemaian": {
+      "rentang_hst": "0 - 15 HSS (Persemaian & Olah Lahan)",
+      "unsur_prioritas": "Bahan Organik, Fosfat (P), dan Agens Hayati Trichoderma",
+      "rekomendasi_pupuk": [
+        "Perlakuan Benih (Seed Treatment): Rendam benih dengan agens hayati Pseudomonas fluorescens atau Trichoderma selama 12 jam.",
+        "Pupuk Organik Matang (Kompos/Kohe): 1-2 ton/ha ditebar saat olah tanah kedua (singkal/gelebeg).",
+        "Pupuk Dasar (0-7 HST): NPK Phonska 150 kg/ha + Urea 50 kg/ha disebar merata sebelum bibit ditancap."
+      ],
+      "pestisida_dan_pht": {
+        "organik_hayati": "Pemasangan jaring pengaman dan pembuatan parit kecil keliling petakan persemaian untuk antisipasi keong mas.",
+        "kimia_rotasi": "Jika ada serangan keong mas: Moluskisida Niklosamida atau Fentin Asetat dosis anjuran saat air tergenang dangkal.",
+        "anjuran_rotasi": "Utamakan pengumpulan telur keong mas secara mekanis pada pagi hari."
+      },
+      "catatan_aplikasi": "Tabur pupuk dasar saat kondisi air sawah macak-macak (dangkal 1-2 cm), jangan saat banjir meluap."
+    },
+    "fase_vegetatif": {
+      "rentang_hst": "14 - 35 HST (Pertunasan & Pembentukan Anakan Maksimum)",
+      "unsur_prioritas": "Nitrogen (N) Terkendali, Fosfat (P), dan Seng (Zn)",
+      "rekomendasi_pupuk": [
+        "Pemupukan Susulan I (14-21 HST): Urea 100 kg/ha + SP-36 atau NPK 50 kg/ha untuk memicu jumlah anakan produktif.",
+        "Pupuk Mikro Seng Sulfat (ZnSO4): 5-10 kg/ha jika lahan sering mengalami gejala asem-aseman (daun kemerahan/kerdil).",
+        "Hindari pemupukan Nitrogen berlebih yang menyebabkan tanaman terlalu rimbun dan rentan rebah."
+      ],
+      "pestisida_dan_pht": {
+        "organik_hayati": "Aplikasi Jamur Beauveria bassiana atau Metarhizium (5 g/L) di pangkal batang untuk pencegahan dini Wereng Coklat (WBC).",
+        "kimia_rotasi": "Penggerek Batang Sundep: Insektisida Klorantraniliprol 50 SC (MoA 28) atau Dimehipo 400 SL saat terpantau ngengat berterbangan.",
+        "anjuran_rotasi": "Rotasikan cara kerja insektisida; jangan menyemprot piretroid sintetik dosis tinggi karena memicu ledakan wereng sekunder."
+      },
+      "catatan_aplikasi": "Aplikasi pupuk saat kondisi tanah lembap basah (macak-macak), tutup pintu pembuangan air selama 3-4 hari."
+    },
+    "fase_bunting": {
+      "rentang_hst": "35 - 55 HST (Fase Bunting / Primordia Bunga)",
+      "unsur_prioritas": "Kalium (K), Silika (Si), dan Kalsium (Ca)",
+      "rekomendasi_pupuk": [
+        "Pemupukan Susulan II (35-42 HST): NPK Phonska 100 kg/ha + KCl (Kalium Klorida) 50 kg/ha.",
+        "Silika Cair (Si) 2-3 ml/liter semprot daun saat bunting tua untuk menebalkan dinding sel pelepah padi.",
+        "STOP TOTAL pemberian pupuk Urea tunggal pada fase bunting agar tanaman tidak empuk dan rentan serangan jamur blas leher."
+      ],
+      "pestisida_dan_pht": {
+        "organik_hayati": "Sanitasi gulma di pematang sawah yang menjadi inang alternatif hama wereng dan ulat grayak.",
+        "kimia_rotasi": "Pencegahan Blas Daun & Blas Leher (Pyricularia): Fungisida Trisiklazol 75 WP (FRAC 16.1) atau Isoprotiolan saat bunting 5% dan bunting 70%.",
+        "anjuran_rotasi": "Aplikasi fungisida preventif wajib dilakukan menjelang malai keluar, terutama saat kelembapan udara >85% dan sering hujan gerimis."
+      },
+      "catatan_aplikasi": "Air petakan sawah dijaga setinggi 3-5 cm saat fase bunting, lalu tiriskan secara berkala (irigasi berselang/intermittent)."
+    },
+    "fase_malai_panen": {
+      "rentang_hst": "55 - 90+ HST (Keluarnya Malai, Pengisian Bulir, hingga Pematangan)",
+      "unsur_prioritas": "Kalium Nitrat Cair (KNO3), Silika (Si), dan Boron (B)",
+      "rekomendasi_pupuk": [
+        "Pupuk Kalium Nitrat Cair + Silika semprot saat padi keluar malai 70% untuk mempercepat pengisian bulir hingga pangkal malai.",
+        "Monokalium Fosfat (MKP) semprot 2 g/L saat malai mulai merunduk agar gabah lebih bernas, berbobot, dan mengkilap.",
+        "Hindari penambahan pupuk kocor nitrogen saat bulir mulai menguning."
+      ],
+      "pestisida_dan_pht": {
+        "organik_hayati": "Pemasangan umpan busuk / bangkai kepiting di tepi sawah untuk menarik dan mengalihkan hama walang sangit.",
+        "kimia_rotasi": "Wereng Batang Coklat (jika > 10 ekor/rumpun): Pimetrozin 50 WG (MoA 9B) atau Triflumuron disemprot langsung ke pangkal batang.",
+        "anjuran_rotasi": "Hentikan seluruh aplikasi pestisida kimiawi minimal 10-14 hari sebelum hari pemanenan."
+      },
+      "catatan_aplikasi": "Keringkan petakan sawah 7-10 hari sebelum panen raya untuk mempermudah operasional pemotongan dan menjaga mutu gabah."
+    }
+  }
+}
