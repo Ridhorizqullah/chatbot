@@ -127,8 +127,15 @@ class WeatherService:
                 break
 
         # Jika query umum tanpa nama spesifik, defaultkan ke Yogyakarta
+        # Namun jika user menanyakan wilayah di luar DIY/Magelang, return None agar dialihkan ke WeatherAPI / Open-Meteo
         if not matched_code:
-            matched_code, matched_label = self.BMKG_ADM4_CODES["yogyakarta"]
+            generic_queries = {"", "cuaca", "hari ini", "cuaca hari ini", "prakiraan cuaca", "cuaca sekarang"}
+            if q_lower in generic_queries or "cuaca" == q_lower:
+                matched_code, matched_label = self.BMKG_ADM4_CODES["yogyakarta"]
+            else:
+                # Kueri spesifik di luar jangkauan kode ADM4 BMKG lokal
+                logger.info(f"[BMKG Service] Lokasi '{location_query}' di luar daftar ADM4 DIY-Magelang. Mengalihkan ke WeatherAPI / Open-Meteo.")
+                return None
 
         api_url = f"https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4={matched_code}"
 

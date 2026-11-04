@@ -208,18 +208,35 @@ class PriceService:
                     tanggal=rec.get("price_date", today_str),
                     tips_negosiasi=tips
                 ))
-            sumber = "Laporan Riil PIHPS Bank Indonesia (Pasar Tradisional DIY-Jateng) via Supabase"
+            sumber = "Database Terverifikasi TaniPintar (Input Admin & Pasar Lokal DIY-Jateng)"
         else:
-            # 2. Update Otomatis Multi-Sumber (PIHPS BI + Panel Bapanas + Pasar Lelang Petani Jogja/Magelang)
-            commodities_to_process = (
-                [target_commodity] if target_commodity else list(cls.COMMODITY_BASELINES.keys())
-            )
+            # 2. Update Otomatis Multi-Sumber Terpadu (Baseline Berkala + Variansi Deterministik Harian)
+            if is_general_cabai:
+                commodities_to_process = [
+                    "Cabai Rawit Merah",
+                    "Cabai Rawit Hijau",
+                    "Cabai Merah Keriting",
+                    "Cabai Merah Besar",
+                ]
+            elif is_general_beras:
+                commodities_to_process = [
+                    "Gabah Kering Panen (GKP)",
+                    "Beras Kualitas Medium I",
+                    "Beras Kualitas Super I",
+                ]
+            elif target_commodity and target_commodity in cls.COMMODITY_BASELINES:
+                commodities_to_process = [target_commodity]
+            else:
+                commodities_to_process = list(cls.COMMODITY_BASELINES.keys())
+
             regions_to_process = (
                 [target_region] if target_region else ["D.I. Yogyakarta", "Magelang (Jawa Tengah)"]
             )
 
             for comm in commodities_to_process:
-                base = cls.COMMODITY_BASELINES[comm]
+                base = cls.COMMODITY_BASELINES.get(comm)
+                if not base:
+                    continue
                 for reg in regions_to_process:
                     shift = cls._calculate_daily_variance(comm, reg, today)
                     # Disparitas lokal (lereng Magelang vs pesisir Bantul/Kulon Progo)
@@ -239,13 +256,14 @@ class PriceService:
                         tanggal=today_str,
                         tips_negosiasi=tips_with_market
                     ))
-            sumber = "Multi-Sumber Terpadu (PIHPS Bank Indonesia DIY-Jateng, Panel Bapanas, & Pasar Lelang Cabai Kulon Progo / Sawangan Magelang)"
+            sumber = "Estimasi Model Harga Pasar TaniPintar (Baseline Berkala & Pasar Lokal DIY-Jateng)"
 
         catatan = (
-            f"Pembaruan harga komoditas padi & cabai per {today.strftime('%d %B %Y')} "
+            f"Pembaruan acuan harga komoditas padi & cabai per {today.strftime('%d %B %Y')} "
             f"khusus wilayah D.I. Yogyakarta dan Magelang. "
             f"Harga tingkat petani (farmgate) mengacu pada harga petik/panen di kebun dan titik lelang Poktan, "
-            f"sedangkan harga pasar merupakan acuan grosir/eceran di pasar sentra."
+            f"sedangkan harga pasar merupakan acuan grosir/eceran di pasar sentra. "
+            f"(Catatan: Angka ini merupakan estimasi model pendukung keputusan, bukan feed live transaksi perbankan resmi)."
         )
 
         return CommodityPriceResult(

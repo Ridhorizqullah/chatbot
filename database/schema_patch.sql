@@ -98,3 +98,33 @@ BEGIN
     LIMIT match_count;
 END;
 $$;
+
+-- 5. Kompatibilitas disease_reference_images (Mendukung bentuk Tabel maupun View)
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'disease_reference_images'
+    ) THEN
+        -- Jika sudah ada sebagai tabel, pastikan kolom yang dibutuhkan tersedia
+        ALTER TABLE public.disease_reference_images ADD COLUMN IF NOT EXISTS image_url TEXT;
+        ALTER TABLE public.disease_reference_images ADD COLUMN IF NOT EXISTS disease_name VARCHAR(150);
+    ELSE
+        -- Jika belum ada sebagai tabel, buat sebagai VIEW dari disease_image_gallery
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_views WHERE schemaname = 'public' AND viewname = 'disease_reference_images'
+        ) THEN
+            CREATE VIEW public.disease_reference_images AS
+            SELECT 
+                id, 
+                disease_name, 
+                scientific_name, 
+                commodity, 
+                organ, 
+                storage_public_url AS image_url,
+                created_at
+            FROM public.disease_image_gallery;
+        END IF;
+    END IF;
+END $$;
+
+

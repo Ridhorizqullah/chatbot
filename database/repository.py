@@ -205,22 +205,36 @@ class ConsultationRepository:
 
     @staticmethod
     async def get_reference_image(disease_name: str) -> Optional[str]:
-        """Mengambil link foto referensi resmi penyakit dari tabel disease_reference_images."""
+        """Mengambil link foto referensi resmi penyakit dari galeri visual Supabase."""
         supabase = get_supabase()
         if not supabase or not disease_name:
             return None
         try:
-            # Gunakan kata kunci inti nama penyakit
             clean_kw = disease_name.split("/")[0].split("(")[0].strip()
-            res = (
+            # Prioritas 1: Tabel galeri visual penyakit resmi (disease_image_gallery)
+            try:
+                res_gal = (
+                    supabase.table("disease_image_gallery")
+                    .select("storage_public_url")
+                    .ilike("disease_name", f"%{clean_kw}%")
+                    .limit(1)
+                    .execute()
+                )
+                if res_gal and res_gal.data and len(res_gal.data) > 0:
+                    return res_gal.data[0].get("storage_public_url")
+            except Exception as e_gal:
+                logger.debug(f"Pengecekan disease_image_gallery ({disease_name}): {e_gal}")
+
+            # Prioritas 2: View atau tabel disease_reference_images (fallback)
+            res_ref = (
                 supabase.table("disease_reference_images")
                 .select("image_url")
                 .ilike("disease_name", f"%{clean_kw}%")
                 .limit(1)
                 .execute()
             )
-            if res and res.data and len(res.data) > 0:
-                return res.data[0].get("image_url")
+            if res_ref and res_ref.data and len(res_ref.data) > 0:
+                return res_ref.data[0].get("image_url")
             return None
         except Exception as e:
             logger.warning(f"Gagal mengambil foto referensi untuk {disease_name}: {e}")

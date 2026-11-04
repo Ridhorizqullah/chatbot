@@ -26,6 +26,9 @@ Dokumen ini merangkum seluruh temuan bug dan error tersebut secara transparan, m
 | **BUG-06** | `graph_builder.py` | AI Ethics & Guardrail | **High** | ✅ **RESOLVED** |
 | **BUG-07** | `agents/fertilizer_agent.py` | Domain Agronomi & Dataset | **Medium** | ✅ **RESOLVED** |
 | **BUG-08** | `services/cv_preprocessor.py` | Computer Vision & Token | **High** | ✅ **RESOLVED** |
+| **BUG-09** | `services/price_service.py` | Data Processing & Exception | **High** | ✅ **RESOLVED** |
+| **BUG-10** | `services/weather_service.py` | Geolocation & Routing | **Medium** | ✅ **RESOLVED** |
+| **BUG-11** | `api/routes/admin.py` & `whatsapp.py` | API Security & Privacy | **High** | ✅ **RESOLVED** |
 
 ---
 
@@ -170,6 +173,37 @@ Dokumen ini merangkum seluruh temuan bug dan error tersebut secara transparan, m
   3. **Ambang Ketajaman (Laplacian Variance):** $\ge 35.0$ (menolak foto kabur/goyang).
   4. **Cakupan Tanaman (Plant Foliage Area):** $\ge 8\%$ luas bidang citra (menolak foto lantai/selfie non-tanaman).
   *Hasil:* Citra buruk ditolak di gerbang awal tanpa menyentuh Gemini API, menghasilkan **100% Token Reduction** untuk request yang tidak layak.
+
+---
+
+### 9. BUG-09: `KeyError: 'Cabai'` / "Beras" pada Kueri Harga Tanpa Wilayah
+* **Gejala / Pesan Error:**
+  `KeyError: 'Cabai'` saat pengguna menanyakan harga umum tanpa wilayah spesifik ketika database Supabase offline.
+* **Akar Masalah (Root Cause):**
+  `target_commodity` bernilai nama agregat (`"Cabai"` atau `"Beras"`). Pada cabang fallback, sistem mengakses `COMMODITY_BASELINES[comm]` di mana key kamus hanya berisi varietas spesifik (seperti `"Cabai Rawit Merah"`).
+* **Resolusi & Solusi Teknis:**
+  Memetakan kueri agregat umum ke sub-varietas spesifik dan menggunakan `.get(comm)` dengan guard safety pada `services/price_service.py`. Menyelaraskan teks transparansi etika harga menjadi *"Estimasi Model Harga Pasar TaniPintar"*.
+
+---
+
+### 10. BUG-10: Cuaca Lokasi Tak Dikenal Diam-diam Terkunci ke Yogyakarta
+* **Gejala:**
+  Pengguna yang menanyakan cuaca di luar DIY/Magelang (misal: "Karawang" atau "Bandung") tetap menerima data cuaca Yogyakarta berlabel "BMKG Resmi".
+* **Akar Masalah (Root Cause):**
+  `_get_bmkg_forecast` memaksakan default ke Yogyakarta jika ADM4 tidak cocok, sehingga rantai cascade ke WeatherAPI dan Open-Meteo tidak pernah terpanggil.
+* **Resolusi & Solusi Teknis:**
+  `_get_bmkg_forecast` hanya menggunakan default Yogyakarta jika kueri benar-benar umum/kosong. Jika kueri menyebut kota di luar ADM4 DIY/Magelang, fungsi mengembalikan `None` dan mengalirkan kueri ke WeatherAPI / Open-Meteo dengan reverse geocoding sesuai kota yang diminta.
+
+---
+
+### 11. BUG-11: Celah Autentikasi Admin Portal, Endpoint Test Terbuka, & Privasi Log
+* **Gejala:**
+  Otentikasi admin di-bypass saat `APP_ENV == "development"`, endpoint `/webhook/test/*` tidak terproteksi, CORS mengizinkan wildcard credentials, dan nomor telepon petani tercatat polos di log stdout.
+* **Resolusi & Solusi Teknis:**
+  1. Menghapus bypass development: `verify_admin_key` mewajibkan `X-Admin-Key` di semua environment (`api/routes/admin.py`).
+  2. Melindungi seluruh endpoint `/webhook/test/*` dengan `verify_admin_key`.
+  3. Mengatur `allow_credentials=False` pada CORS saat wildcard origin aktif (`api/app.py`).
+  4. Menerapkan `PhoneMaskingFormatter` pada `core/logger.py` yang otomatis menyamarkan nomor telepon petani (`62812****7890`).
 
 ---
 

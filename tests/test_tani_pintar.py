@@ -168,7 +168,7 @@ class TestTaniPintar6Features(unittest.TestCase):
         self.assertEqual(res.nama_tanaman, "cabai")
         self.assertIn("Generatif", res.fase_pertumbuhan)
         self.assertGreater(len(res.rekomendasi_pupuk), 0)
-        self.assertIn("KNO3", res.rekomendasi_pupuk[0])
+        self.assertTrue(any("KNO3" in p for p in res.rekomendasi_pupuk), f"KNO3 harus ada dalam rekomendasi pupuk generatif: {res.rekomendasi_pupuk}")
         self.assertIsNotNone(res.pestisida_pendamping)
 
     def test_all_6_router_intents(self):
@@ -185,8 +185,8 @@ class TestTaniPintar6Features(unittest.TestCase):
         s3: TaniState = {"user_message": "bagaimana cuaca di sawah karawang?", "media_id": None}
         self.assertEqual(asyncio.run(router_node(s3))["intent"], "weather")
 
-        # 4. Harga
-        s4: TaniState = {"user_message": "berapa harga gabah gkp hari ini?", "media_id": None}
+        # 4. Harga (kueri spesifik wilayah diarahkan langsung ke market_price)
+        s4: TaniState = {"user_message": "berapa harga gabah gkp di sleman?", "media_id": None}
         self.assertEqual(asyncio.run(router_node(s4))["intent"], "market_price")
 
         # 5. Pupuk

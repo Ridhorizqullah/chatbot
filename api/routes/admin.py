@@ -9,13 +9,12 @@ router = APIRouter(prefix="/api/v1/admin", tags=["Admin Portal"])
 
 
 def verify_admin_key(x_admin_key: Optional[str] = Header(None)):
-    """Verifikasi token otorisasi admin."""
-    if settings.app_env != "development":
-        if not x_admin_key or x_admin_key != settings.admin_api_key:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Akses Ditolak: Kunci Admin (X-Admin-Key) tidak valid."
-            )
+    """Verifikasi token otorisasi admin (wajib di seluruh environment)."""
+    if not x_admin_key or not settings.admin_api_key or x_admin_key != settings.admin_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Akses Ditolak: Kunci Admin (X-Admin-Key) tidak valid atau belum dikonfigurasi."
+        )
 
 
 # ==========================================
@@ -55,8 +54,13 @@ async def input_market_price(payload: AdminPriceInputSchema, x_admin_key: Option
 
 
 @router.get("/prices")
-async def get_all_prices(commodity: Optional[str] = None, province: Optional[str] = None):
+async def get_all_prices(
+    commodity: Optional[str] = None, 
+    province: Optional[str] = None,
+    x_admin_key: Optional[str] = Header(None)
+):
     """[READ] Melihat data harga pasar yang tersimpan di Supabase."""
+    verify_admin_key(x_admin_key)
     data = await ConsultationRepository.get_latest_market_prices(commodity=commodity, province=province)
     return {
         "status": "success",

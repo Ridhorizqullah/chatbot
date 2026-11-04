@@ -16,12 +16,12 @@ def create_app() -> FastAPI:
         redoc_url="/redoc"
     )
 
-    # CORS Middleware
+    # CORS Middleware (Aman & Sesuai Spesifikasi W3C Fetch)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["*"],
     )
 

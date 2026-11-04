@@ -4,7 +4,7 @@ import hmac
 import hashlib
 import asyncio
 from typing import Optional, Set
-from fastapi import APIRouter, Request, Query, Response, BackgroundTasks, status
+from fastapi import APIRouter, Request, Query, Response, BackgroundTasks, Header, status
 from core.config import settings
 from core.logger import logger
 from graph_builder import tani_graph_app
@@ -13,6 +13,7 @@ from services.session_service import SessionService
 from core.dedup import message_deduplicator
 from core.latency_tracker import LatencyTracker
 from database.repository import ConsultationRepository
+from api.routes.admin import verify_admin_key
 
 router = APIRouter(prefix="/webhook", tags=["WhatsApp Webhook"])
 whatsapp_service = WhatsAppService()
@@ -27,7 +28,10 @@ def verify_waha_hmac(raw_body: bytes, headers: dict) -> bool:
     """
     secret = settings.waha_hmac_secret
     if not secret:
-        # Jika belum dikonfigurasi di environment, izinkan untuk kemudahan development lokal
+        if settings.app_env == "production":
+            logger.warning("[WAHA Security] WAHA HMAC Secret belum dikonfigurasi di production. Webhook ditolak (fail-closed).")
+            return False
+        # Di development lokal, izinkan jika secret belum diset
         return True
 
     # Header signature standar WAHA atau Meta
@@ -540,11 +544,12 @@ async def handle_waha_event(request: Request, background_tasks: BackgroundTasks)
 # ==============================================================
 
 @router.post("/test/send-buttons")
-async def test_send_buttons(payload: dict):
+async def test_send_buttons(payload: dict, x_admin_key: Optional[str] = Header(None)):
     """
     Endpoint testing untuk mengirim Reply Buttons (Tombol Pilihan Cepat) ke nomor tujuan.
-    Payload: {"phone": "628xxx", "body": "Pilih menu:", "buttons": [{"id": "btn_1", "text": "Pilihan 1"}]}
+    Memerlukan autentikasi X-Admin-Key.
     """
+    verify_admin_key(x_admin_key)
     to_phone = payload.get("phone")
     if not to_phone:
         return Response(content=json.dumps({"status": "error", "message": "Field 'phone' wajib diisi"}), status_code=400)
@@ -572,11 +577,12 @@ async def test_send_buttons(payload: dict):
 
 
 @router.post("/test/send-list")
-async def test_send_list(payload: dict):
+async def test_send_list(payload: dict, x_admin_key: Optional[str] = Header(None)):
     """
     Endpoint testing untuk mengirim List Message (Menu Daftar) ke nomor tujuan.
-    Payload: {"phone": "628xxx"}
+    Memerlukan autentikasi X-Admin-Key.
     """
+    verify_admin_key(x_admin_key)
     to_phone = payload.get("phone")
     if not to_phone:
         return Response(content=json.dumps({"status": "error", "message": "Field 'phone' wajib diisi"}), status_code=400)
@@ -589,11 +595,12 @@ async def test_send_list(payload: dict):
 
 
 @router.post("/test/send-poll")
-async def test_send_poll(payload: dict):
+async def test_send_poll(payload: dict, x_admin_key: Optional[str] = Header(None)):
     """
     Endpoint testing untuk mengirim Poll WhatsApp ke nomor tujuan.
-    Payload: {"phone": "628xxx", "question": "Tanaman apa yang sedang ditanam?", "options": ["Cabai", "Padi"]}
+    Memerlukan autentikasi X-Admin-Key.
     """
+    verify_admin_key(x_admin_key)
     to_phone = payload.get("phone")
     if not to_phone:
         return Response(content=json.dumps({"status": "error", "message": "Field 'phone' wajib diisi"}), status_code=400)
