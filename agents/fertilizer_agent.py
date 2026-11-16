@@ -1,10 +1,3 @@
-from typing import Optional
-from google import genai
-from core.config import settings
-from core.logger import logger
-from agents.schemas import FertilizerRecommendationResult
-
-
 import json
 import os
 from typing import Optional, Dict, Any
@@ -12,6 +5,7 @@ from google import genai
 from core.config import settings
 from core.logger import logger
 from agents.schemas import FertilizerRecommendationResult
+from services import llm_fallback
 
 
 class FertilizerAgent:
@@ -140,6 +134,13 @@ PETUNJUK KHUSUS (NON-TEMPLATE & BERIMBANG):
                     return response.parsed
             except Exception as e:
                 logger.warning(f"Percobaan model pupuk '{model}' gagal: {e}. Mencoba model cadangan...")
+
+        # Cadangan TokenHub jika semua model Gemini gagal
+        if llm_fallback.is_enabled():
+            logger.warning("Semua model Gemini gagal, beralih ke cadangan TokenHub untuk rekomendasi pupuk.")
+            fallback_result = llm_fallback.generate_structured(prompt, FertilizerRecommendationResult)
+            if fallback_result:
+                return fallback_result
 
         return FertilizerRecommendationResult(
             nama_tanaman=crop,

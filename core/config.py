@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     gemini_model: str = Field(default="gemini-3.5-flash", alias="GEMINI_MODEL")
     embedding_model: str = Field(default="gemini-embedding-001", alias="EMBEDDING_MODEL")
 
+    # Cadangan LLM teks: Tencent Cloud TokenHub (dipakai jika semua model Gemini gagal)
+    tokenhub_api_key: str = Field(default="", alias="TOKENHUB_API_KEY")
+    tokenhub_base_url: str = Field(default="https://tokenhub-intl.tencentcloudmaas.com/v1", alias="TOKENHUB_BASE_URL")
+    tokenhub_models: str = Field(default="hy4,deepseek-v4.1-flash", alias="TOKENHUB_MODELS")
+    tokenhub_timeout_seconds: float = Field(default=30.0, alias="TOKENHUB_TIMEOUT_SECONDS")
+
     # Supabase (Database, pgvector, Storage)
     supabase_url: str = Field(default="", alias="SUPABASE_URL")
     supabase_service_role_key: str = Field(default="", alias="SUPABASE_SERVICE_ROLE_KEY")

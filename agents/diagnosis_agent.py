@@ -9,6 +9,7 @@ from agents.prompts import SYSTEM_PROMPT_DIAGNOSIS
 from database.repository import ConsultationRepository
 from services.cv_preprocessor import CVPreprocessor, CVQualityResult
 from services.visual_rag_service import VisualRAGService, VisualMatchResult
+from services import llm_fallback
 
 
 class DiagnosisAgent:
@@ -70,6 +71,11 @@ class DiagnosisAgent:
                     return response.parsed
             except Exception as e:
                 logger.warning(f"Percobaan model '{model}' gagal: {e}. Mencoba model cadangan...")
+
+        # Cadangan TokenHub hanya untuk permintaan teks (foto tetap wajib lewat Gemini Vision)
+        if isinstance(contents, str) and llm_fallback.is_enabled():
+            logger.warning("Semua model Gemini gagal, beralih ke cadangan TokenHub untuk diagnosis teks.")
+            return llm_fallback.generate_structured(contents, DiseaseDiagnosisResult)
         return None
 
     async def diagnose_text(
