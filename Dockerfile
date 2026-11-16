@@ -23,6 +23,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application source code
 COPY . .
 
+# Jalankan sebagai user non-root (UID 1000 agar cocok dengan pemilik folder logs/ & data/ di VPS)
+RUN useradd --create-home --uid 1000 appuser \
+    && mkdir -p /app/logs /app/data \
+    && chown -R appuser:appuser /app
+USER appuser
+
 # Expose port
 EXPOSE 8000
 

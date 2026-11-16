@@ -1,0 +1,456 @@
+import os
+import sys
+import json
+import time
+from pathlib import Path
+from typing import List, Dict, Any
+from google import genai
+from core.config import settings
+from core.logger import logger
+from database.supabase_client import get_supabase
+
+# Pastikan encoding UTF-8 di Windows shell
+sys.stdout.reconfigure(encoding="utf-8")
+
+
+def get_embedding(client: genai.Client, text: str) -> List[float]:
+    """Menghasilkan vector embedding 768 dimensi menggunakan Google GenAI SDK."""
+    model = settings.embedding_model.replace("models/", "")
+    config = {"output_dimensionality": 768} if "gemini-embedding" in model else None
+    response = client.models.embed_content(
+        model=model,
+        contents=text,
+        config=config,
+    )
+    return response.embeddings[0].values
+
+
+def build_knowledge_items() -> List[Dict[str, Any]]:
+    """
+    Menyusun korpus knowledge base domain pertanian yang diekstrak dan disintesis
+    dari dokumen resmi di folder 'artikel/':
+    1. SOP-Cabai-Merah-2014.pdf (Puslitbanghorti Balitbangtan Kementan)
+    2. FRAC Code List 2025 (Fungicide Resistance Action Committee)
+    3. IRAC Mode of Action Brochure Ed 6 (Insecticide Resistance Action Committee)
+    4. Permentan No. 13 Tahun 2022 (Dosis Pemupukan N, P, K Spesifik Lokasi Padi Sawah)
+    """
+    items = []
+
+    # =========================================================================
+    # KELOMPOK 1: SOP BUDIDAYA & MANAJEMEN TANAMAN CABAI (SOP CABAI 2014 - KEMENTAN)
+    # =========================================================================
+    items.extend([
+        {
+            "commodity": "cabai",
+            "disease_name": "SOP Balitsa: Penyediaan Benih dan Persemaian Cabai Merah",
+            "scientific_name": "Capsicum annuum L. (Nursery Phase)",
+            "pathogen_type": "SOP Budidaya & Persemaian",
+            "symptoms": "Fase persemaian 0-25 hari sebelum pindah tanam. Sasaran: bibit sehat, seragam, bebas patogen rebah semai (damping-off/Pythium) dan terlindung dari kutu kebul.",
+            "mechanical_treatment": "Gunakan sungkup kasa/kelambu nilon putih 50-60 mesh agar serangga vektor virus (kutu kebul dan thrips) tidak masuk ke area persemaian. Media semai tanah + pupuk kandang matang (1:1) yang telah dikukus/disterilisasi.",
+            "sanitation_treatment": "Siram persemaian pada pagi hari dengan gembor halus. Hindari penyiraman sore yang menyebabkan kelembaban malam terlalu tinggi.",
+            "chemical_actives": "Perlakuan benih (seed treatment): rendam air hangat 45-50°C selama 30 menit. Inokulasi agens hayati Trichoderma harzianum (5 g/l) atau PGPR pada media semai.",
+            "prevention": "Bibit siap tanam berumur 21-25 hari setelah semai, memiliki 4-5 helai daun sejati, batang kokoh hijau tua, dan perakaran kompak."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "SOP Balitsa: Persiapan Lahan, Bedengan, dan Pengapuran Dolomit",
+            "scientific_name": "Capsicum annuum L. (Land Preparation)",
+            "pathogen_type": "SOP Budidaya & Olah Tanah",
+            "symptoms": "Lahan dengan pH masam (< 5.5) memicu ledakan jamur Fusarium dan kekurangan unsur hara kalsium/magnesium. Sasaran: pH tanah ideal 6.0 - 6.8.",
+            "mechanical_treatment": "Bajak dan cangkul tanah sedalam 30-40 cm untuk memperbaiki aerasi. Buat bedengan lebar 100-110 cm, tinggi 30-40 cm (saat musim hujan 50 cm), lebar parit 40-50 cm untuk drainase cepat.",
+            "sanitation_treatment": "Bersihkan sisa perakaran gulma dan sisa tanaman inang solanaceae sebelumnya. Taburkan pupuk kandang fermentasi 15-20 ton/ha.",
+            "chemical_actives": "Kapur Pertanian/Dolomit (CaMg(CO3)2) 1.5 - 3 ton/ha ditabur 2-3 minggu sebelum tanam jika pH < 6.0. Pupuk dasar NPK 15-15-15 (150-200 kg/ha) dan SP-36 (100 kg/ha) diberikan 1 minggu sebelum tanam di bawah mulsa plastik hitam perak.",
+            "prevention": "Pemasangan mulsa plastik hitam perak (MPHP) menekan gulma, menjaga kelembaban, dan pantulan sinar perak menghalau kutu daun dan thrips."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "SOP Balitsa: Penanaman dan Pemindahan Bibit Cabai",
+            "scientific_name": "Capsicum annuum L. (Transplanting)",
+            "pathogen_type": "SOP Budidaya & Penanaman",
+            "symptoms": "Bibit rentan mengalami transplanting shock (stres pindah tanam), layu sementara, atau rebah jika akar rusak saat melepas polybag.",
+            "mechanical_treatment": "Buat lubang tanam dengan pelubang mulsa diameter 10 cm, jarak tanam 50-60 cm x 60-70 cm sistem segitiga (zigzag). Lakukan penanaman sore hari (15.30-17.30) agar bibit tidak terpapar terik matahari.",
+            "sanitation_treatment": "Kocor lubang tanam sebelum bibit dimasukkan dengan larutan PGPR atau air bersih agar tanah mengikat akar secara sempurna.",
+            "chemical_actives": "Aplikasi Asam Humat (1-2 g/liter air) saat kocor lubang tanam untuk merangsang pertumbuhan bulu akar baru dan mengurangi stres pindah tanam.",
+            "prevention": "Pilih bibit yang seragam dan sehat. Jangan menanam bibit yang menunjukkan gejala daun menggulung atau kerdil."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "SOP Balitsa: Pemasangan Ajir (Turus) dan Pengikatan Batang Cabai",
+            "scientific_name": "Capsicum annuum L. (Trellising)",
+            "pathogen_type": "SOP Budidaya & Pemeliharaan",
+            "symptoms": "Tanaman cabai mudah roboh saat tertiup angin kencang atau saat beban buah lebat, menyebabkan buah menyentuh tanah dan membusuk.",
+            "mechanical_treatment": "Pasang ajir bambu panjang 1.5 - 1.75 meter pada umur 7-10 HST sedalam 20-30 cm, berjarak 10 cm dari pangkal batang. Pemasangan ajir lebih awal mencegah kerusakan sistem perakaran utama.",
+            "sanitation_treatment": "Ikat batang cabai pada ajir menggunakan tali rafia membentuk angka 8 agar batang leluasa membesar dan tidak tergores.",
+            "chemical_actives": "Ajir bambu yang pernah dipakai musim sebelumnya disemprot larutan klorin/desinfektan sebelum dipasang ulang untuk mematikan spora jamur dorman.",
+            "prevention": "Pasang tali gawar melintang antar-ajir setiap interval 30-40 cm ketinggian tanaman untuk menopang cabang lateral pembawa buah."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "SOP Balitsa: Perempelan (Pewiwitan) Tunas Air dan Bunga Pertama",
+            "scientific_name": "Capsicum annuum L. (Pruning)",
+            "pathogen_type": "SOP Budidaya & Pemeliharaan",
+            "symptoms": "Tunas air di ketiak daun bawah menguras energi vegetatif dan menyebabkan kanopi bawah terlalu rimbun/lembab, memicu jamur bercak daun Cercospora.",
+            "mechanical_treatment": "Rempel tunas air di ketiak daun di bawah cabang utama (cabang Y) pada umur 15-25 HST saat tunas masih berukuran 3-5 cm. Petik juga bunga pertama di cabang Y agar tanaman fokus memperkokoh kerangka cabang produktif.",
+            "sanitation_treatment": "Lakukan perempelan pada pagi hari yang cerah (pukul 07.00 - 09.00) agar luka bekas petikan cepat kering terkena sinar matahari.",
+            "chemical_actives": "Jika cuaca sangat lembab, semprot fungisida tembaga hidroksida dosis ringan (1 g/l) untuk menutup luka pangkasan dan mencegah infeksi bakteri.",
+            "prevention": "Gunakan tangan bersih yang disterilkan atau gunting pangkas tajam. Jangan merempel saat tanaman basah oleh embun lebat atau setelah hujan."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "SOP Balitsa: Manajemen Pengairan dan Drainase Cabai Merah",
+            "scientific_name": "Capsicum annuum L. (Water Management)",
+            "pathogen_type": "SOP Budidaya & Pengairan",
+            "symptoms": "Kelebihan air memicu busuk akar Phytophthora dan layu bakteri. Kekurangan air menyebabkan bunga rontok dan buah berukuran kecil kerdil.",
+            "mechanical_treatment": "Musim kemarau: lakukan pengairan sistem leb (menggenangi parit) 1-2 minggu sekali selama 15-30 menit sampai tanah meresap, lalu buang kelebihan air. Musim hujan: perdalam parit keliling hingga 50-60 cm agar air tidak menggenang di parit.",
+            "sanitation_treatment": "Pastikan saluran pembuangan akhir lancar tanpa hambatan sedimen lumpur.",
+            "chemical_actives": "Air irigasi harus bersih dari limbah rumah tangga dan bukan berasal dari buangan parit kebun cabai lain yang sedang terjangkit layu bakteri.",
+            "prevention": "Jaga kapasitas lapang tanah tetap gembur. Jangan biarkan permukaan bedengan tergenang air lebih dari 2 jam setelah hujan deras."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "SOP Balitsa: Pemupukan Susulan Berimbang dan Pengocoran Cabai",
+            "scientific_name": "Capsicum annuum L. (Fertilization Schedule)",
+            "pathogen_type": "Pemupukan Berimbang",
+            "symptoms": "Gejala defisiensi N: daun tua kuning pucat. Defisiensi P: daun keunguan dan perakaran kerdil. Defisiensi K: tepi daun terbakar mengering dan buah lembek. Defisiensi Ca: busuk pantat buah (Blossom End Rot).",
+            "mechanical_treatment": "Aplikasi pupuk susulan sistem kocor (larutan) pada lingkar tajuk tanaman (10-15 cm dari pangkal batang). Interval pengocoran tiap 7-10 hari sekali.",
+            "sanitation_treatment": "Lakukan kocor pagi hari pukul 06.30 - 09.00 saat tanah dalam kondisi lembap (bukan saat tanah kering kerontang atau tergenang becek).",
+            "chemical_actives": "Fase Vegetatif (10-35 HST): NPK 16-16-16 (2.5 kg/200 L air) + MgSO4 (1 kg/200 L air), kocor 150-200 ml/pohon. Fase Generatif (35-80 HST): NPK 16-16-16 (3 kg) + MKP 0-52-34 (1 kg) + KNO3 Putih 13-0-45 (2 kg/200 L air), kocor 200 ml/pohon. Semprot Kalsium Boron rutin seminggu sekali.",
+            "prevention": "Hindari pupuk berkadar Nitrogen tinggi (khususnya Urea) pada saat musim hujan lebat karena membuat dinding sel tanaman berair dan mudah ditembus spora jamur Antraknosa."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "SOP Balitsa: Pemanenan dan Standar Mutu Cabai Merah",
+            "scientific_name": "Capsicum annuum L. (Harvesting Standards)",
+            "pathogen_type": "SOP Panen & Kualitas",
+            "symptoms": "Pemetikan buah terlalu muda menyebabkan cabai cepat keriput dan susut bobot tinggi. Pemetikan terlalu masak menyebabkan daya simpan sangat singkat dan rentan busuk.",
+            "mechanical_treatment": "Petik buah bersama tangkainya secara hati-hati agar tunas bunga di sekitarnya tidak patah. Putar tangkai buah berlawanan arah pertumbuhan.",
+            "sanitation_treatment": "Lakukan panen pada pagi hari setelah embun kering (pukul 07.00 - 10.00) atau sore hari yang teduh. Hindari memetik saat hujan lebat.",
+            "chemical_actives": "Perhatikan Pre-Harvest Interval (PHI) / Waktu Tunggu Pestisida. Hentikan penyemprotan pestisida kimia minimal 7-10 hari sebelum jadwal panen agar residu aman konsumsi.",
+            "prevention": "Pisahkan langsung buah yang terserang patek (antraknosa) atau tersengat lalat buah di wadah terpisah (jangan dicampur dalam keranjang panen sehat)."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "SOP Balitsa: Penanganan Pasca Panen dan Sortasi Mutu SNI",
+            "scientific_name": "SNI 01-4480-1998 (Cabai Merah Segar)",
+            "pathogen_type": "Pasca Panen & Sortasi Pasar",
+            "symptoms": "Penumpukan cabai dalam karung plastik rapat tanpa sirkulasi menyebabkan respirasi panas anaerobik, buah berlendir, dan susut bobot mencapai 20-30%.",
+            "mechanical_treatment": "Hamparkan cabai yang baru dipanen di atas terpal di tempat teduh bersirkulasi udara baik selama 2-3 jam untuk mengeringkan sisa embun lapang (curing). Sortir buah berdasarkan kelas mutu Mutu I (panjang >10 cm, diameter >1.2 cm, bebas cacat) dan Mutu II.",
+            "sanitation_treatment": "Gunakan wadah keranjang plastik berlubang (keranjang krat) dengan kapasitas maksimal 20-25 kg untuk pengangkutan jarak jauh.",
+            "chemical_actives": "Penyimpanan ideal pada suhu 8-10°C dengan kelembaban 85-90% dapat mempertahankan kesegaran cabai hingga 10-14 hari.",
+            "prevention": "Jangan menggunakan karung tertutup rapat atau menginjak-injak cabai saat pengepakan karena luka memar fisik adalah pintu masuk bakteri busuk lunak Erwinia."
+        }
+    ])
+
+    # =========================================================================
+    # KELOMPOK 2: DETAIL HAMA & PENYAKIT PENTING CABAI (SOP CABAI IX & BALITSA)
+    # =========================================================================
+    items.extend([
+        {
+            "commodity": "cabai",
+            "disease_name": "Hama Lalat Buah Cabai (Bactrocera dorsalis / Bactrocera sp.)",
+            "scientific_name": "Bactrocera sp. (Diptera: Tephritidae)",
+            "pathogen_type": "Hama",
+            "symptoms": "Buah cabai tampak memiliki titik hitam kecil bekas tusukan ovipositor betina. Di dalam buah terdapat belatung (larva) putih yang memakan daging buah dan biji, buah menguning sebagian lalu membusuk basah dan gugur prematur sebelum merah.",
+            "mechanical_treatment": "Kumpulkan seluruh buah yang busuk dan jatuh ke tanah lalu masukkan ke kantong plastik tertutup atau bakar/kubur sedalam 50 cm agar pupa tidak masuk ke tanah. Pasang perangkap atraktan metil eugenol (Petrogenol) 20-25 titik/ha setinggi 1.5 meter.",
+            "sanitation_treatment": "Bersihkan gulma di sekitar pertanaman yang menjadi tempat perlindungan lalat dewasa.",
+            "chemical_actives": "Semprot umpan beracun (protein bait) dicampur Malation atau Klorpirifos di pinggir guludan. Jika serangan parah, aplikasi insektisida kontak lambung Dimetoat (1.5 ml/l) atau Deltametrin (1 ml/l) berselang-seling.",
+            "prevention": "Pasang perangkap kuning berperekat (yellow sticky trap) dan gunakan mulsa perak untuk mengacaukan orientasi pendaratan lalat buah betina."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "Hama Kutu Daun Persik Cabai (Myzus persicae)",
+            "scientific_name": "Myzus persicae Sulzer (Hemiptera: Aphididae)",
+            "pathogen_type": "Hama",
+            "symptoms": "Koloni kutu berwarna hijau muda atau kuning kecokelatan menggerombol di pucuk muda dan bawah daun. Daun berkerut, terpuntir, dan pertumbuhan terhambat. Sekresi embun madu memicu tumbuhnya cendawan jelaga hitam pada permukaan daun.",
+            "mechanical_treatment": "Tumpangsari atau tanam barisan pembatas tanaman perangkap jagung atau tanaman pengusir seperti tanaman marigold dan kemangi di sekeliling kebun.",
+            "sanitation_treatment": "Pangkas dan musnahkan pucuk-pucuk daun yang menjadi sarang koloni kutu awal.",
+            "chemical_actives": "Semprot ekstrak daun mimba atau sabun kalium hayati. Jika di atas ambang kendali (7 ekor/10 daun), semprot insektisida sistemik Imidakloprid 200 SL (0.5 ml/l, IRAC 4A) bergantian dengan Abamektin 18 EC (0.5 ml/l, IRAC 6).",
+            "prevention": "Manfaatkan musuh alami kumbang koksi (Menochilus sexmaculatus) dan larva lalat jala (Chrysoperla sp.). Hindari insektisida piretroid berspektrum luas yang membunuh predator alami."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "Hama Ulat Grayak Cabai (Spodoptera litura)",
+            "scientific_name": "Spodoptera litura Fabricius (Lepidoptera: Noctuidae)",
+            "pathogen_type": "Hama",
+            "symptoms": "Larva muda memakan epidermis daun bagian bawah hingga menyisakan selaput tipis transparan (daun membran). Larva dewasa memakan helaian daun hingga tersisa tulang daun serta melubangi buah cabai.",
+            "mechanical_treatment": "Kumpulkan dan remas kelompok telur ulat yang tertutup bulu cokelat keemasan di permukaan daun. Ambil larva ulat secara manual pada sore/malam hari saat ulat aktif keluar.",
+            "sanitation_treatment": "Pengolahan tanah yang sempurna sebelum tanam membalik kepompong ulat ke permukaan tanah sehingga mati terpapar terik matahari atau dimangsa burung.",
+            "chemical_actives": "Agens hayati: semprot suspensi Bacillus thuringiensis (Bt) atau virus Sl-NPV (Spodoptera litura Nuclear Polyhedrosis Virus) 2 g/l saat ulat masih instar 1-2. Insektisida kimia: Emamektin Benzoat 5 SG (0.3 g/l, IRAC 6) atau Klorantraniliprol (IRAC 28) disemprot sore/malam hari.",
+            "prevention": "Pasang perangkap feromonoid (feromon seks ulat grayak) 15 buah/ha untuk menangkap ngengat jantan dan menekan perkawinan."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "Penyakit Virus Kerupuk dan Mosaik Belang Cabai (CMV / CVMV / TMV)",
+            "scientific_name": "Cucumber Mosaic Virus (CMV) & Tobacco Mosaic Virus (TMV)",
+            "pathogen_type": "Virus",
+            "symptoms": "Daun menunjukkan corak belang hijau tua dan hijau muda (mosaik), daun mengecil menyempit seperti tali/rambut, tepi daun mengeriting bergelombang kaku seperti kerupuk, ruas batang memendek, tanaman sangat kerdil dan buah berukuran mini keras.",
+            "mechanical_treatment": "Cabut (roguing) dan musnahkan tanaman yang memperlihatkan gejala mosaik kerupuk sejak dini dengan dibakar atau dikubur di luar kebun.",
+            "sanitation_treatment": "TMV dapat menular melalui sentuhan tangan dan alat pangkas: cuci tangan dan celupkan gunting pangkas ke dalam larutan deterjen atau alkohol 70% setelah memegang tanaman.",
+            "chemical_actives": "Virus tidak dapat dibunuh dengan pestisida kimia. Pengendalian diarahkan ke vektor penular: kutu daun Myzus persicae dan thrips menggunakan insektisida rotasi Imidakloprid (IRAC 4A) dan Abamektin (IRAC 6). Semprot asam amino dan silika cair untuk memperkuat dinding sel tanaman sehat di sekitarnya.",
+            "prevention": "Gunakan benih bersertifikat bebas virus, sterilkan benih dengan merendam dalam larutan Trisodium Fosfat (TSP 10%) selama 20 menit, dan pasang mulsa plastik perak."
+        }
+    ])
+
+    # =========================================================================
+    # KELOMPOK 3: STANDAR FRAC 2025 (FUNGICIDE RESISTANCE MANAGEMENT)
+    # =========================================================================
+    items.extend([
+        {
+            "commodity": "cabai",
+            "disease_name": "FRAC 2025: Fungisida Golongan Triazole (FRAC 3 - DMI)",
+            "scientific_name": "FRAC Code 3: Demethylation Inhibitors (DMI)",
+            "pathogen_type": "Fungisida FRAC",
+            "symptoms": "Bahan aktif: Difenokonazol, Tebukonazol, Propikonazol, Heksakonazol. Bekerja menghambat biosintesis ergosterol pada membran sel jamur patogen. Efektif mengendalikan bercak daun Cercospora, antraknosa Colletotrichum, dan hawar pelepah.",
+            "mechanical_treatment": "Gunakan fungisida triazole secara kuratif awal ketika gejala pertama penyakit mulai muncul di lapangan.",
+            "sanitation_treatment": "Maksimal aplikasi: 2-3 kali semprot berturut-turut dalam satu musim tanam. Wajib diselingi dengan fungisida kontak multi-site (FRAC M03 seperti Mankozeb atau Propineb).",
+            "chemical_actives": "Difenokonazol 250 g/l (dosis 0.5 - 0.75 ml/l air) atau Tebukonazol 430 g/l (dosis 0.5 ml/l air). Sifat sistemik bergerak akropetal di dalam jaringan daun.",
+            "prevention": "Risiko resistensi: MEDIUM. Menggunakan triazole terus-menerus tanpa rotasi akan menyebabkan mutasi CYP51 pada jamur sehingga patogen menjadi kebal total."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "FRAC 2025: Fungisida Golongan Strobilurin (FRAC 11 - QoI)",
+            "scientific_name": "FRAC Code 11: Quinone Outside Inhibitors (QoI)",
+            "pathogen_type": "Fungisida FRAC",
+            "symptoms": "Bahan aktif: Azoksistrobin, Piraklostrobin, Triflosistrobin. Bekerja menghambat transfer elektron pada mitokondria (kompleks III) sehingga jamur kehilangan energi respirasi. Memiliki efek fitotonik (daun tampak lebih hijau royo-royo).",
+            "mechanical_treatment": "Aplikasikan pada fase preventif aktif (sebelum sporulasi meluas) atau pada fase pembentukan pentil buah cabai.",
+            "sanitation_treatment": "Jangan menyemprot lebih dari 2 kali per musim jika digunakan tunggal. Campuran premix (misal Azoksistrobin + Difenokonazol) sangat dianjurkan untuk memperluas spektrum.",
+            "chemical_actives": "Azoksistrobin 250 g/l (dosis 0.5 - 1 ml/l air). Kombinasi premix Azoksistrobin 200 g/l + Difenokonazol 125 g/l (Amistar Top) dosis 0.5 - 1 ml/l air.",
+            "prevention": "Risiko resistensi: HIGH (Sangat Tinggi). Mutasi tunggal G143A pada jamur dapat memicu kekebalan total terhadap seluruh kelompok strobilurin jika diaplikasikan berulang-ulang tanpa rotasi."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "FRAC 2025: Fungisida Kontak Multi-Site (FRAC M01, M02, M03)",
+            "scientific_name": "FRAC Code M: Multi-Site Activity (Low Resistance Risk)",
+            "pathogen_type": "Fungisida FRAC",
+            "symptoms": "Bahan aktif: Mankozeb (FRAC M03), Propineb (FRAC M03), Tembaga Oksiklorida / Tembaga Hidroksida (FRAC M01), Belerang/Sulfur (FRAC M02). Mematikan jamur di banyak titik metabolisme sekaligus pada permukaan daun.",
+            "mechanical_treatment": "Merupakan fondasi utama pengendalian preventif saat cuaca sering hujan atau kelembapan udara >80%. Partikel fungisida membentuk lapisan pelindung di atas daun sebelum spora jamur berkecambah.",
+            "sanitation_treatment": "Aplikasikan setiap 5-7 hari sekali di musim penghujan. Jika tercuci hujan lebat dalam 2 jam setelah semprot, lakukan penyemprotan ulang.",
+            "chemical_actives": "Mankozeb 80% WP (dosis 2-3 g/l air), Propineb 70% WP (dosis 2-2.5 g/l air), Tembaga Hidroksida 77% WP (dosis 1.5-2 g/l air).",
+            "prevention": "Risiko resistensi: LOW (Sangat Rendah). Tidak ada riwayat resistensi di lapangan. Wajib digunakan sebagai partner tangki (tank mix) atau partner rotasi utama bagi fungisida sistemik FRAC 3 dan FRAC 11."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "FRAC 2025: Fungisida Spesialis Oomycetes (FRAC 4 Metalaksil & FRAC 40 Dimetomorf)",
+            "scientific_name": "FRAC Code 4 (PA) & FRAC Code 40 (CAA)",
+            "pathogen_type": "Fungisida FRAC",
+            "symptoms": "Spesialis mengendalikan jamur semu Oomycetes penyebab busuk daun Phytophthora infestans (busuk basah gelap daun/batang), busuk pangkal batang Phytophthora capsici, dan bulai pada tanaman jagung/sayuran.",
+            "mechanical_treatment": "Perbaiki guludan dan hindari genangan air tanah sebelum aplikasi fungisida kocor perakaran.",
+            "sanitation_treatment": "Gunakan Metalaksil sebagai perlakuan benih atau kocor pangkal batang pada awal musim tanam saat cuaca ekstrem basah.",
+            "chemical_actives": "Metalaksil 35% WP (dosis 1-1.5 g/l kocor batang) atau Dimetomorf 50% WP (dosis 0.5-1 g/l semprot daun).",
+            "prevention": "Risiko resistensi: Metalaksil (HIGH), Dimetomorf (LOW-MEDIUM). Hindari penggunaan Metalaksil tunggal lebih dari 2 kali per musim; campur selalu dengan Mankozeb (M03)."
+        }
+    ])
+
+    # =========================================================================
+    # KELOMPOK 4: STANDAR IRAC EDISI 6 (INSECTICIDE RESISTANCE MANAGEMENT)
+    # =========================================================================
+    items.extend([
+        {
+            "commodity": "cabai",
+            "disease_name": "IRAC MoA: Golongan Avermektin (IRAC 6 - Aktivator Saluran Klorida)",
+            "scientific_name": "IRAC Group 6: Chloride Channel Activators (Avermectins)",
+            "pathogen_type": "Insektisida IRAC",
+            "symptoms": "Bahan aktif: Abamektin, Emamektin Benzoat. Mengikat saluran ion klorida pada sistem saraf dan otot serangga, menyebabkan kelumpuhan saraf dan serangga berhenti makan dalam hitungan jam.",
+            "mechanical_treatment": "Sangat efektif menembus jaringan lapisan lilin daun secara translaminar untuk membasmi hama Thrips parvispinus tersembunyi di bawah daun dan penggorok daun (Liriomyza).",
+            "sanitation_treatment": "Semprot pada pagi hari sebelum pukul 08.30 atau sore hari pukul 16.00 saat stomata terbuka dan serangga aktif bergerak.",
+            "chemical_actives": "Abamektin 18 g/l EC (dosis 0.5 - 0.75 ml/l air) untuk Thrips dan Tungau. Emamektin Benzoat 50 g/kg SG (dosis 0.2 - 0.3 g/l air) untuk Ulat Grayak dan Ulat Buah.",
+            "prevention": "Aturan rotasi window: Terapkan maksimal 2 kali semprot dengan interval 5 hari, kemudian WAJIB beralih ke kelompok IRAC lain (seperti IRAC 5 Spinetoram atau IRAC 4A Imidakloprid) selama minimal 2-3 minggu."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "IRAC MoA: Golongan Spinosin (IRAC 5 - Modulator Alosterik nAChR)",
+            "scientific_name": "IRAC Group 5: Nicotinic Acetylcholine Receptor Allosteric Modulators",
+            "pathogen_type": "Insektisida IRAC",
+            "symptoms": "Bahan aktif: Spinetoram, Spinosad. Berasal dari fermentasi bakteri tanah Saccharopolyspora spinosa. Merupakan insektisida modern green chemistry ramah lingkungan dengan efikasi luar biasa terhadap thrips daun keriting yang sudah kebal abamektin.",
+            "mechanical_treatment": "Gunakan ketika populasi thrips atau ulat grayak melonjak dan tidak mempan dengan insektisida konvensional.",
+            "sanitation_treatment": "Gunakan volume semprot merata (high volume) dengan butiran semprot halus (droplet mist) mengenai pucuk dan bunga.",
+            "chemical_actives": "Spinetoram 120 g/l SC (misal: Endure) dengan dosis sangat hemat: 0.4 - 0.5 ml/l air.",
+            "prevention": "Risiko resistensi: MEDIUM. Simpan Spinetoram sebagai pemutus siklus resistensi (breakthrough application); jangan digunakan berturut-turut lebih dari 2 kali semprot."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "IRAC MoA: Golongan Neonikotinoid (IRAC 4A - Agonis Reseptor nAChR)",
+            "scientific_name": "IRAC Group 4A: Neonicotinoids",
+            "pathogen_type": "Insektisida IRAC",
+            "symptoms": "Bahan aktif: Imidakloprid, Tiametoksam, Asetamiprid. Bekerja sistemik masuk ke pembuluh xylem tanaman. Efektif mengendalikan hama penusuk-penghisap: kutu kebul (vektor virus gemini), kutu daun persik, dan wereng pada padi.",
+            "mechanical_treatment": "Dapat diaplikasikan lewat kocor lubang tanam saat bibit masih muda untuk memberikan perlindungan sistemik 2-3 minggu dari serbuan vektor virus.",
+            "sanitation_treatment": "Hindari penyemprotan langsung pada saat bunga cabai sedang mekar penuh (pagi hari 07.00 - 09.30) untuk melindungi serangga penyerbuk lebah madu.",
+            "chemical_actives": "Imidakloprid 200 g/l SL (dosis 0.5 - 0.75 ml/l air) atau Tiametoksam 25% WG (dosis 0.3 - 0.5 g/l air).",
+            "prevention": "Kutu kebul cepat membentuk kekebalan terhadap Imidakloprid jika disemprot setiap minggu. Selang-seling dengan IRAC 23 (Spiromesifen) atau agens hayati Beauveria bassiana."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "IRAC MoA: Golongan Diamida (IRAC 28 - Modulator Reseptor Ryanodine)",
+            "scientific_name": "IRAC Group 28: Ryanodine Receptor Modulators (Diamides)",
+            "pathogen_type": "Insektisida IRAC",
+            "symptoms": "Bahan aktif: Klorantraniliprol, Flubendiamida. Mengaktifkan pelepasan kalsium intraseluler otot serangga sehingga ulat mengalami kontraksi permanen dan mati lemas. Target utama: Penggerek Batang Padi (Sundep/Beluk) dan Penggerek Buah Cabai (Helicoverpa armigera).",
+            "mechanical_treatment": "Aplikasikan saat tanaman padi berumur 15-20 HST dan 35-40 HST sebelum larva masuk ke dalam batang padi.",
+            "sanitation_treatment": "Daya lekat dan translaminar sangat kuat, tahan terhadap guyuran hujan setelah 2 jam pengeringan.",
+            "chemical_actives": "Klorantraniliprol 50 g/l SC (misal: Prevathon) dengan dosis 1.5 - 2 ml/l air atau Flubendiamida 20% WDG (dosis 0.5 g/l air).",
+            "prevention": "Risiko resistensi: LOW-MEDIUM. Menjadi andalan pengawalan tanaman padi fase vegetatif dan pembungaan cabai terhadap ulat penggerek."
+        },
+        {
+            "commodity": "cabai",
+            "disease_name": "IRAC MoA: Golongan Penghambat Sintesis Lipid (IRAC 23) & Bio-Insektisida",
+            "scientific_name": "IRAC Group 23: Inhibitors of Acetyl CoA Carboxylase & Biologicals",
+            "pathogen_type": "Insektisida IRAC",
+            "symptoms": "Bahan aktif IRAC 23: Spiromesifen, Spirotetramat. Menghambat biosintesis asam lemak pada telur dan nimfa tungau (Polyphagotarsonemus) dan kutu kebul. Bahan Hayati: Jamur Beauveria bassiana dan Bacillus thuringiensis.",
+            "mechanical_treatment": "Sangat direkomendasikan untuk menekan ledakan populasi tungau kuning cabai yang menyebabkan daun keriting menggulung ke bawah tebal kaku.",
+            "sanitation_treatment": "Aplikasi Beauveria bassiana (5 g/l) disemprot pada sore hari (pukul 16.30 ke atas) dengan kelembaban tinggi agar spora jamur berkecambah menembus kutikula tubuh serangga.",
+            "chemical_actives": "Spiromesifen 240 g/l SC (misal: Oberon) dosis 0.5 - 1 ml/l air. Bacillus thuringiensis (Bt) formulasi tepung dosis 2 g/l air.",
+            "prevention": "Menggabungkan bio-insektisida hayati di awal musim tanam secara drastis mengurangi ketergantungan pada racun kimia keras dan menjaga kelestarian musuh alami."
+        }
+    ])
+
+    # =========================================================================
+    # KELOMPOK 5: PEMUPUKAN BERIMBANG PADI SAWAH (PERMENTAN NO. 13 TAHUN 2022)
+    # =========================================================================
+    items.extend([
+        {
+            "commodity": "padi",
+            "disease_name": "Permentan 13/2022: Pemupukan Dasar Padi Sawah dan Pengelolaan Jerami",
+            "scientific_name": "Oryza sativa L. (Basal Fertilization Phase)",
+            "pathogen_type": "Pemupukan Berimbang",
+            "symptoms": "Tanah sawah yang dikuras jeraminya setiap musim mengalami defisiensi silika (Si), kalium (K), dan bahan organik tanah merosot di bawah 2%, menyebabkan tanah keras dan anakan padi sedikit.",
+            "mechanical_treatment": "Kembalikan dan cacah jerami sisa panen ke petakan sawah saat pengolahan tanah (singkal/glebeg) minimal 10-14 hari sebelum tanam. Aplikasi dekomposer jerami untuk mempercepat pelapukan.",
+            "sanitation_treatment": "Petakan sawah diairi macak-macak saat olah tanah agar dekomposisi jerami tidak menghasilkan asam-asam organik beracun bagi akar bibit muda.",
+            "chemical_actives": "Pemupukan Dasar (0-7 HST): Berikan seluruh dosis SP-36 / Fosfat (75-100 kg/ha) + NPK 15-15-15 (100 kg/ha) + Urea sepertiga dosis (50 kg/ha). Pada tanah sawah masam, tambahkan kapur pertanian/dolomit 500-1000 kg/ha.",
+            "prevention": "Prinsip 5 Tepat (Tepat Jenis, Tepat Dosis, Tepat Waktu, Tepat Cara, Tepat Sasaran). Jangan memberikan Urea berlebihan di awal karena menyebabkan bibit sukulen empuk dan diserang keong mas atau rebah semai."
+        },
+        {
+            "commodity": "padi",
+            "disease_name": "Permentan 13/2022: Pemupukan Susulan I Fase Anakan Aktif Padi (14-21 HST)",
+            "scientific_name": "Oryza sativa L. (Active Tillering Phase)",
+            "pathogen_type": "Pemupukan Berimbang",
+            "symptoms": "Kekurangan nitrogen pada umur 14-21 HST membatasi jumlah pembentukan anakan produktif sehingga malai per rumpun berkurang drastis.",
+            "mechanical_treatment": "Lakukan penyiangan gulma (matun/gasrok) sebelum pupuk ditabur agar unsur hara tidak tercuri oleh gulma teki dan eceng gondok.",
+            "sanitation_treatment": "Kondisikan air sawah setinggi macak-macak (1-2 cm) saat memupuk. Jangan memupuk dalam kondisi parit sawah meluap agar butiran pupuk tidak hanyut terbawa aliran keluar petakan.",
+            "chemical_actives": "Pupuk Susulan I (14-21 HST): Urea 100 kg/ha + NPK 15-15-15 150 kg/ha ditabur merata di sela rumpun padi. Semprot pupuk hayati PGPR atau seng sulfat (ZnSO4) 1-2 g/l jika tanah menunjukkan gejala kerdil asem-aseman.",
+            "prevention": "Biarkan petakan dalam kondisi macak-macak selama 3-4 hari setelah pemupukan agar pupuk larut dan diserap bulu akar sebelum dilakukan pengairan kembali."
+        },
+        {
+            "commodity": "padi",
+            "disease_name": "Permentan 13/2022: Pemupukan Susulan II Fase Bunting / Primordia Padi (35-45 HST)",
+            "scientific_name": "Oryza sativa L. (Panicle Initiation Phase)",
+            "pathogen_type": "Pemupukan Berimbang",
+            "symptoms": "Kekurangan Kalium (K) pada fase keluar malai menyebabkan persentase gabah hampa tinggi, bulir gabah ujung tidak terisi penuh, dan batang rapuh mudah rebah saat terpaan angin hujan.",
+            "mechanical_treatment": "Gunakan Bagan Warna Daun (BWD) untuk mengukur kebutuhan rill Nitrogen: jika skor BWD < 4, tambahkan Urea 50 kg/ha. Jika skor BWD >= 4, cukup tambahkan KCl atau NPK berkalium tinggi.",
+            "sanitation_treatment": "Tinggikan muka air sawah menjadi 3-5 cm untuk menopang kebutuhan evaporasi tinggi selama proses pengisian bulir gabah.",
+            "chemical_actives": "Pupuk Susulan II (35-45 HST): Pupuk KCl (50-75 kg/ha) + Urea (50 kg/ha atau sesuai BWD) atau NPK 15-15-15 (100 kg/ha). Semprot pupuk daun Kalium Silika cair (2 ml/l) saat menjelang malai keluar serempak.",
+            "prevention": "Hentikan pemberian pupuk Nitrogen tinggi saat fase bunting akhir (di atas 50 HST) karena nitrogen bebas pada daun padi memicu spora jamur Blas Malai (Potong Leher / Pyricularia oryzae) meledak ganas."
+        },
+        {
+            "commodity": "padi",
+            "disease_name": "Manajemen Pengairan Berselang (AWD) dan Mitigasi Iklim Padi Sawah",
+            "scientific_name": "Alternate Wetting and Drying (AWD Irrigation)",
+            "pathogen_type": "Manajemen Iklim & Air",
+            "symptoms": "Penggenangan air terus-menerus tanpa henti sepanjang musim tanam memicu pembusukan akar karena kekurangan oksigen (tanah anoksik), timbulnya gas metana, dan tanaman rentan serangan Wereng Coklat.",
+            "mechanical_treatment": "Terapkan sistem irigasi berselang (AWD): genangi sawah setinggi 3-5 cm selama 3 hari, lalu biarkan air surut mengering alami sampai tanah merekah halus (selama 5-7 hari), kemudian diairi kembali.",
+            "sanitation_treatment": "Pada fase bunting hingga pengisian gabah (45-75 HST), sawah harus tetap tergenang air 3-5 cm, lalu keringkan kembali 10 hari sebelum panen.",
+            "chemical_actives": "Sistem AWD menghemat konsumsi air irigasi hingga 25-30% tanpa menurunkan hasil gabah dan secara drastis memperkuat perakaran padi menjadi putih panjang.",
+            "prevention": "Drainase cepat saat serangan wereng batang coklat (WBC) terdeteksi. Sawah yang dikeringkan membuat lingkungan di pangkal batang tidak lembab sehingga perkembangan nimfa wereng terhenti."
+        }
+    ])
+
+    return items
+
+
+def run_ingestion():
+    """Fungsi utama menjalankan pemrosesan dan ingestion ke Supabase knowledge_base."""
+    logger.info("Memulai proses Ingestion Artikel dan SOP Resmi ke Supabase...")
+
+    # Pastikan API key dan client tersedia
+    api_key = settings.gemini_api_key
+    if not api_key:
+        logger.error("GEMINI_API_KEY tidak ditemukan di environment. Batalkan ingestion.")
+        return False
+
+    client = genai.Client(api_key=api_key)
+    supabase = get_supabase()
+    if not supabase:
+        logger.error("Koneksi Supabase tidak aktif. Batalkan ingestion.")
+        return False
+
+    # Bangun korpus pengetahuan
+    items = build_knowledge_items()
+    logger.info(f"Total knowledge item yang akan diindeks: {len(items)} entri.")
+
+    # Simpan salinan lokal ke data/knowledge/sop_and_scientific_articles.json
+    output_dir = Path("data/knowledge")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / "sop_and_scientific_articles.json"
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(items, f, ensure_ascii=False, indent=2)
+    logger.info(f"Salinan master artikel tersimpan di: {json_path}")
+
+    # Cek daftar yang sudah ada di Supabase untuk mencegah duplikasi nama
+    try:
+        existing_res = supabase.table("knowledge_base").select("disease_name").execute()
+        existing_names = set(r["disease_name"] for r in (existing_res.data or []))
+        logger.info(f"Ditemukan {len(existing_names)} record yang sudah ada sebelumnya di database.")
+    except Exception as e:
+        logger.warning(f"Tidak dapat membaca existing record: {e}. Lanjutkan ingestion normal.")
+        existing_names = set()
+
+    success_count = 0
+    skip_count = 0
+    error_count = 0
+
+    for idx, item in enumerate(items, start=1):
+        name = item["disease_name"]
+        if name in existing_names:
+            logger.info(f"[{idx}/{len(items)}] SKIP (Sudah ada): {name}")
+            skip_count += 1
+            continue
+
+        # Susun searchable text untuk representasi semantik vektor berkualitas tinggi
+        searchable_text = (
+            f"Komoditas: {item['commodity']}. "
+            f"Topik / Judul: {item['disease_name']} ({item.get('scientific_name', '')}). "
+            f"Kategori: {item['pathogen_type']}. "
+            f"Deskripsi / Gejala: {item['symptoms']} "
+            f"Tindakan Lapangan / Mekanis: {item['mechanical_treatment']} "
+            f"Sanitasi / Prosedur: {item['sanitation_treatment']} "
+            f"Bahan Aktif Kimiawi / MoA: {item.get('chemical_actives', '')} "
+            f"Pencegahan / Rotasi / Pemupukan: {item.get('prevention', '')}"
+        )
+
+        try:
+            # Generate Gemini Embedding (768 dimensi)
+            emb = get_embedding(client, searchable_text)
+
+            record = {
+                "commodity": item["commodity"],
+                "disease_name": item["disease_name"],
+                "scientific_name": item.get("scientific_name"),
+                "pathogen_type": item["pathogen_type"],
+                "symptoms": item["symptoms"],
+                "mechanical_treatment": item["mechanical_treatment"],
+                "sanitation_treatment": item["sanitation_treatment"],
+                "chemical_actives": item.get("chemical_actives"),
+                "prevention": item.get("prevention"),
+                "embedding": emb
+            }
+
+            # Insert ke Supabase
+            supabase.table("knowledge_base").insert(record).execute()
+            logger.info(f"[{idx}/{len(items)}] SUKSES INDEX: {name}")
+            success_count += 1
+
+            # Beri jeda kecil agar aman dari rate limiting
+            time.sleep(0.3)
+        except Exception as ex:
+            logger.error(f"[{idx}/{len(items)}] GAGAL INDEX {name}: {ex}")
+            error_count += 1
+
+    logger.info("=" * 60)
+    logger.info(f"INGESTION SELESAI!")
+    logger.info(f"Total Baru Berhasil Diindeks : {success_count}")
+    logger.info(f"Dilewati (Sudah Ada)        : {skip_count}")
+    logger.info(f"Gagal / Eror                 : {error_count}")
+    logger.info("=" * 60)
+    return True
+
+
+if __name__ == "__main__":
+    run_ingestion()

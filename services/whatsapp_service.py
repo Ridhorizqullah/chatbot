@@ -1,8 +1,12 @@
 import re
 import httpx
+from urllib.parse import urlparse
 from typing import Optional, Dict, Any, List
 from core.config import settings
 from core.logger import logger
+
+# Batas ukuran media yang boleh diunduh (mencegah memori VPS habis)
+MAX_MEDIA_BYTES = 20 * 1024 * 1024
 
 
 def sanitize_chat_id(to_phone: str) -> str:
@@ -830,6 +834,24 @@ class WhatsAppService:
                 return False
         return False
 
+    @staticmethod
+    def _is_waha_url(url: str) -> bool:
+        """True hanya jika scheme, host, dan port URL sama persis dengan WAHA_BASE_URL (anti-SSRF)."""
+        try:
+            target = urlparse(url)
+            base = urlparse(settings.waha_base_url)
+            default_port = {"http": 80, "https": 443}
+            return (
+                target.scheme in ("http", "https")
+                and target.scheme == base.scheme
+                and bool(target.hostname)
+                and target.hostname == base.hostname
+                and (target.port or default_port[target.scheme]) == (base.port or default_port[base.scheme])
+                and not target.username and not target.password
+            )
+        except (ValueError, KeyError):
+            return False
+
     async def download_media(self, media_id: str) -> Optional[bytes]:
         """Mengunduh file media (foto/audio) dari WAHA atau Meta Graph API berdasarkan media_id / URL."""
         if not media_id:
@@ -838,18 +860,29 @@ class WhatsAppService:
         # Kasus 1: Media berupa URL (WAHA atau direct HTTP)
         if media_id.startswith("http://") or media_id.startswith("https://") or media_id.startswith("/"):
             download_url = media_id
+            base = settings.waha_base_url.rstrip("/")
             # Ganti localhost/127.0.0.1 dengan waha_base_url agar bisa diakses antar-kontainer Docker
-            if "localhost:3000" in download_url:
-                download_url = download_url.replace("http://localhost:3000", settings.waha_base_url).replace("https://localhost:3000", settings.waha_base_url)
-            elif "127.0.0.1:3000" in download_url:
-                download_url = download_url.replace("http://127.0.0.1:3000", settings.waha_base_url).replace("https://127.0.0.1:3000", settings.waha_base_url)
-            elif download_url.startswith("/"):
-                download_url = f"{settings.waha_base_url}{download_url}"
+            for local_prefix in ("http://localhost:3000", "https://localhost:3000",
+                                 "http://127.0.0.1:3000", "https://127.0.0.1:3000"):
+                if download_url.startswith(local_prefix):
+                    download_url = base + download_url[len(local_prefix):]
+                    break
+            else:
+                if download_url.startswith("/") and not download_url.startswith("//"):
+                    download_url = f"{base}{download_url}"
+
+            # Keamanan: hanya izinkan unduhan dari server WAHA sendiri (cegah SSRF & bocornya X-Api-Key)
+            if not self._is_waha_url(download_url):
+                logger.warning(f"[Media Security] URL media di luar host WAHA ditolak: {download_url[:200]}")
+                return None
 
             try:
-                headers = self._get_waha_headers() if settings.waha_base_url in download_url else {}
-                async with httpx.AsyncClient(timeout=30.0) as client:
+                headers = self._get_waha_headers()
+                async with httpx.AsyncClient(timeout=30.0, follow_redirects=False) as client:
                     media_res = await client.get(download_url, headers=headers)
+                    if media_res.status_code == 200 and len(media_res.content) > MAX_MEDIA_BYTES:
+                        logger.warning(f"Media terlalu besar ({len(media_res.content)} bytes), diabaikan.")
+                        return None
                     if media_res.status_code == 200:
                         logger.info(f"Berhasil mengunduh media dari WAHA: {download_url} ({len(media_res.content)} bytes)")
                         return media_res.content
@@ -861,6 +894,10 @@ class WhatsAppService:
                 return None
 
         # Kasus 2: Meta Graph API (ID numerik media)
+        if not re.fullmatch(r"\d{1,30}", media_id):
+            logger.warning(f"[Media Security] Format media_id Meta tidak valid, ditolak: {media_id[:100]}")
+            return None
+
         if not self.access_token:
             logger.warning("META_WA_ACCESS_TOKEN belum diset, tidak bisa mengunduh media dari Meta.")
             return None

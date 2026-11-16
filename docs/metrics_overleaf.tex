@@ -1,0 +1,390 @@
+\documentclass[11pt,a4paper]{article}
+
+% ==============================================================================
+% PAKET-PAKET PENDUKUNG OVERLEAF (LATEX STANDARD)
+% ==============================================================================
+\usepackage[utf8]{inputenc}
+\usepackage[bahasa]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning}
+\usepackage{microtype}
+\usepackage{caption}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+
+% Konfigurasi Hyperref
+\hypersetup{
+    colorlinks=true,
+    linkcolor=teal,
+    citecolor=blue,
+    urlcolor=cyan,
+    pdftitle={Kerangka Evaluasi Pengguna & Usability Engineering TaniPintar Bot},
+    pdfauthor={Tim Riset TaniPintar Bot}
+}
+
+% Konfigurasi Header & Footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small \textit{Protokol Usability Engineering Lapangan}}
+\fancyhead[R]{\small \textit{TaniPintar Bot: WhatsApp AI Support}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% ==============================================================================
+% DOKUMEN UTAMA
+% ==============================================================================
+\begin{document}
+
+% ------------------------------------------------------------------------------
+% HALAMAN JUDUL
+% ------------------------------------------------------------------------------
+\begin{titlepage}
+    \centering
+    \vspace*{1.2cm}
+    {\Large \textbf{KERANGKA EVALUASI PENGGUNA \& USABILITY ENGINEERING}}\\[0.6cm]
+    {\LARGE \textbf{STANDAR PENGUJIAN KINERJA, KEPUASAN, DAN KEPERCAYAAN SISTEM ASISTEN PERTANIAN BERBASIS WHATSAPP}}\\[0.5cm]
+    {\large \textbf{Landasan Teori: Usability Engineering (Jakob Nielsen) \& 5Es of Usability (Whitney Quesenbery)}}\\[0.3cm]
+    {\normalsize \textbf{(Studi Kasus: Komoditas Cabai \& Padi bersama 10 Petani Kelompok Binaan)}}\\[2.2cm]
+
+    \textbf{Disusun oleh:}\\
+    {\large \textbf{Tim Peneliti \& Rekayasa TaniPintar}}\\[0.3cm]
+    Program Studi Informatika / Ilmu Komputer\\[2.5cm]
+
+    \vfill
+    {\large \textbf{LABORATORIUM REKAYASA SISTEM CERDAS \& PERTANIAN PRESISI}}\\[0.2cm]
+    {\large \textbf{2026}}
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\newpage
+
+% ==============================================================================
+% BAB I: PERENCANAAN STUDI PENGUJIAN
+% ==============================================================================
+\section{Perencanaan Studi Pengujian (Study Setup Dimensions)}
+
+Evaluasi pengguna untuk sistem \textbf{TaniPintar Bot} dirancang berdasarkan kaidah \textit{Usability Engineering} guna menjamin bahwa asisten berbasis WhatsApp ini tidak hanya unggul secara komputasi, melainkan terbukti dapat dioperasikan secara efektif, efisien, dan memuaskan oleh petani pedesaan.
+
+\subsection{Goal (Tujuan Pengujian)}
+Tujuan utama penelitian ini adalah menguji kinerja antarmuka percakapan WhatsApp yang menerapkan pintasan angka (1--6), kemampuan penolakan foto buram oleh \textit{OpenCV Quality Gatekeeper}, ketepatan rekomendasi pupuk/pestisida berimbang non-template, dan penerimaan petani terhadap sistem pengaman (\textit{safety guardrail}) saat kasus dirujuk ke Petugas Penyuluh Lapangan (PPL).
+
+\subsection{Schedule (Jadwal Pelaksanaan)}
+Pengujian lapangan dialokasikan selama \textbf{3 Minggu} yang dimulai pada \textbf{Minggu Depan}:
+\begin{itemize}[noitemsep]
+    \item \textbf{Minggu 1 (Fase Orientasi \& Workshop Terbimbing):} Pengenalan bot di saung tani, penyimpanan nomor kontak resmi WhatsApp, dan eksekusi 5 skenario tugas terpandu bersama 10 responden.
+    \item \textbf{Minggu 2 (Fase Uji Coba Mandiri Lapangan):} Petani menggunakan bot secara mandiri selama 3--7 hari di kebun/sawah masing-masing tanpa kehadiran pengamat untuk menguji retensi penggunaan alami.
+    \item \textbf{Minggu 3 (Fase Evaluasi Akhir \& Wawancara):} Pengisian kuesioner SUS adaptasi petani, skala kepuasan agronomi Likert 1--5, wawancara mendalam (\textit{exit interview}), dan rekapitulasi data metrik.
+\end{itemize}
+
+\subsection{Budget (Alokasi Anggaran)}
+Pengujian ini berstatus \textbf{\textit{Zero Budget / Riset Mandiri Swadaya}}. Studi mengoptimalkan sumber daya kelompok tani lokal (saung pertemuan rutin), perangkat gawai pintar pribadi petani, serta koneksi data seluler yang sudah aktif tanpa pemberian insentif tunai yang dapat menimbulkan bias respons subjektif.
+
+\subsection{Lab vs Field (Justifikasi Pengujian Lapangan)}
+Dipilih metode \textbf{\textit{Field Study}} (Pengujian Lapangan di Lahan Pertanian). Pengujian di laboratorium buatan tidak mampu mensimulasikan tantangan riil:
+\begin{enumerate}[label=\alph*., noitemsep]
+    \item Intensitas cahaya matahari alami dan bayangan kanopi daun yang menguji ketahanan filter citra OpenCV.
+    \item Kondisi tangan petani yang kotor/basah saat bekerja yang menuntut efisiensi pintasan numerik.
+    \item Validitas ekologis dalam pengambilan keputusan pemupukan dan pengendalian hama secara langsung di depan tanaman sakit.
+\end{enumerate}
+
+\subsection{On-site vs Remote (Justifikasi Model Gabungan)}
+Menerapkan pendekatan \textbf{\textit{Hybrid}}:
+\begin{itemize}[noitemsep]
+    \item \textbf{\textit{On-site} (Saung Tani):} Menjembatani literasi digital awal dan mengamati hambatan antarmuka pertama.
+    \item \textbf{\textit{Remote} (Lahan Mandiri):} Menguji keandalan sistem dalam aktivitas harian secara organik tanpa tekanan efek pengamat (\textit{Hawthorne effect}).
+\end{itemize}
+
+\subsection{Moderated vs Unmoderated (Justifikasi Pengawasan Bertahap)}
+\begin{itemize}[noitemsep]
+    \item \textbf{\textit{Moderated} (Tahap Awal):} Fasilitator mendampingi secara pasif untuk mencatat waktu tugas (*ToT*), keberhasilan tugas (*Task Success*), dan keraguan klik secara objektif.
+    \item \textbf{\textit{Unmoderated} (Tahap Lanjutan):} Penggunaan bebas tanpa pengawas guna mengamati daya toleransi sistem terhadap masukan bebas (*Error Tolerance*).
+\end{itemize}
+
+\subsection{Ethics (Etika Penelitian dan Keselamatan Pengguna)}
+\begin{enumerate}[noitemsep]
+    \item \textbf{\textit{Informed Consent}:} Disampaikan secara lisan dan tertulis ramah bahwa bot bertindak sebagai alat bantu pendukung keputusan (\textit{decision-support tool}), bukan pengganti mutlak pakar. Partisipasi bersifat sukarela.
+    \item \textbf{Privasi Data:} Nomor telepon petani disamarkan (\textit{masked}, misal: $0812\text{****}5678 \to \text{P-01}$) pada seluruh publikasi laporan.
+    \item \textbf{Etika Keselamatan Agronomi (\textit{Safety Guardrail}):} Jika tingkat keyakinan diagnosis berada di bawah ambang batas ($< 0.70$), bot dilarang keras merekomendasikan bahan kimia sintetis dan wajib merujuk kasus ke PPL setempat untuk mencegah kerugian panen.
+\end{enumerate}
+
+% ==============================================================================
+% BAB II: MATRIKS METRIK EVALUASI
+% ==============================================================================
+\section{Matriks Metrik Evaluasi: Intention, Metric, Rationale, Reliability \& Validity}
+
+Setiap parameter evaluasi dijabarkan secara terstruktur mengikuti relasi:
+\begin{equation*}
+    \text{\textbf{Intention}} \longrightarrow \text{\textbf{Metric}} \longrightarrow \text{\textbf{Kenapa Pakai Metrik Ini?}} \longrightarrow \text{\textbf{Kenapa Reliabel \& Valid?}}
+\end{equation*}
+
+\subsection{Dimensi Kinerja (Performance Metrics)}
+
+\subsubsection{1. Task Success (Effective)}
+\begin{itemize}[noitemsep]
+    \item \textbf{Intention:} Menguji apakah petani dapat mencapai tujuan utamanya (menerima diagnosis, dosis pupuk, harga pasar, dan jam semprot aman) secara tuntas tanpa kegagalan dialog.
+    \item \textbf{Metric:} \textit{Task Completion Rate} (TCR), yaitu persentase tugas yang diselesaikan dengan benar tanpa bantuan penguji (Target: $\ge 85\%$).
+    \item \textbf{Kenapa Pakai Metrik Ini?} Sesuai prinsip \textit{Effective} (Whitney Quesenbery): jika pengguna gagal mencapai tujuannya, kecepatan respon atau tampilan bot yang menarik menjadi tidak berguna.
+    \item \textbf{Kenapa Reliabel \& Valid?}
+    \begin{itemize}[noitemsep]
+        \item \textit{Valid:} Mengukur langsung ketercapaian fungsional tanpa perantara asumsi.
+        \item \textit{Reliabel:} Kriteria tuntas dinilai secara biner ($1 = \text{sukses}, 0 = \text{gagal}$) yang konsisten antar pengamat.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{2. Time on Task (Efficient)}
+\begin{itemize}[noitemsep]
+    \item \textbf{Intention:} Mengukur durasi waktu yang dihabiskan petani dari mengirimkan pesan pembuka hingga mendapatkan solusi akhir.
+    \item \textbf{Metric:} \textit{Time on Task} (ToT) dalam detik/menit per skenario tugas (Target: Median $< 120$ detik/tugas).
+    \item \textbf{Kenapa Pakai Metrik Ini?} Petani di sawah membutuhkan respons yang lugas dan cepat di sela-sela aktivitas fisik bertani.
+    \item \textbf{Kenapa Reliabel \& Valid?}
+    \begin{itemize}[noitemsep]
+        \item \textit{Valid:} Mencerminkan efisiensi kognitif membaca serta latensi end-to-end sistem.
+        \item \textit{Reliabel:} Waktu diverifikasi silang antara stopwatch penguji dan \textit{timestamp} pesan basis data WhatsApp.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{3. Errors \& Error Tolerance (Error Tolerant)}
+\begin{itemize}[noitemsep]
+    \item \textbf{Intention:} Mengetahui seberapa sering petani salah memasukkan menu/foto, serta menguji ketangguhan bot dalam memandu pemulihan kesalahan (\textit{error recovery}) tanpa macet (\textit{deadlock}).
+    \item \textbf{Metric:} Frekuensi salah input per tugas (Target $\le 1$), tingkat pemulihan sukses ($100\%$), dan insiden salah rekomendasi kimia berbahaya ($0$ kasus berkat guardrail $0.70$).
+    \item \textbf{Kenapa Pakai Metrik Ini?} Uji kualitas sistem interaksi bukan pada ketiadaan kesalahan, melainkan bagaimana sistem menuntun pengguna saat kesalahan terjadi (\textit{Error Tolerant}).
+    \item \textbf{Kenapa Reliabel \& Valid?}
+    \begin{itemize}[noitemsep]
+        \item \textit{Valid:} Membedakan antara kekeliruan pengguna (\textit{slips}) dengan kegagalan perangkat lunak.
+        \item \textit{Reliabel:} Kesalahan tercatat secara deterministik pada log audit dan filter citra OpenCV.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{4. Efficiency (Productivity \& Keystroke Ratio)}
+\begin{itemize}[noitemsep]
+    \item \textbf{Intention:} Mengukur penghematan energi motorik dan kognitif pengetikan petani melalui navigasi menu angka (1--6).
+    \item \textbf{Metric:} Rasio penggunaan tombol pintasan angka dibanding ketikan teks manual panjang (Target $\ge 80\%$) dan reduksi kesalahan pengetikan ($\ge 90\%$).
+    \item \textbf{Kenapa Pakai Metrik Ini?} Papan ketik ponsel sentuh sering kali merepotkan petani pedesaan yang memiliki jari besar atau tangan berdebu.
+    \item \textbf{Kenapa Reliabel \& Valid?}
+    \begin{itemize}[noitemsep]
+        \item \textit{Valid:} Mengukur secara kuantitatif penurunan beban kerja fisik pengguna.
+        \item \textit{Reliabel:} Jumlah karakter pesan masuk tercatat presisi pada log HTTP webhook.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{5. Learnability (Easy to Learn)}
+\begin{itemize}[noitemsep]
+    \item \textbf{Intention:} Mengukur kemudahan petani pemula dalam memahami cara kerja bot pada kontak pertama tanpa instruksi yang berbelit-belit.
+    \item \textbf{Metric:} \textit{Time-to-First-Success} (TTFS), yaitu durasi dari pesan sapaan pertama hingga menu layanan berhasil terbuka pada Tugas 1 (Target $\le 60$ detik).
+    \item \textbf{Kenapa Pakai Metrik Ini?} Sistem publik untuk komunitas agraris harus bersifat \textit{self-explanatory} sejak menit pertama.
+    \item \textbf{Kenapa Reliabel \& Valid?}
+    \begin{itemize}[noitemsep]
+        \item \textit{Valid:} Menilai kurva adopsi awal model mental pengguna.
+        \item \textit{Reliabel:} Diukur pada kondisi paparan pertama (\textit{first exposure}) yang identik untuk seluruh partisipan.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{6. Memorability}
+\begin{itemize}[noitemsep]
+    \item \textbf{Intention:} Menguji apakah petani tetap mampu mengoperasikan bot dengan lancar setelah beberapa hari tidak mengaksesnya.
+    \item \textbf{Metric:} \textit{Retention Task Success Rate}, yaitu keberhasilan penyelesaian tugas mandiri pada Tahap 3 setelah jeda 3--7 hari pemakaian lapangan (Target $\ge 90\%$).
+    \item \textbf{Kenapa Pakai Metrik Ini?} Penggunaan asisten proteksi tanaman bersifat insidental saat serangan hama datang tiba-tiba; alur bot tidak boleh cepat terlupakan.
+    \item \textbf{Kenapa Reliabel \& Valid?}
+    \begin{itemize}[noitemsep]
+        \item \textit{Valid:} Mengukur persistensi memori operasional antarmuka.
+        \item \textit{Reliabel:} Jeda waktu pengujian distandarisasi seragam selama 3--7 hari.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Dimensi Kepuasan \& Keterlibatan (Satisfaction \& Engaging)}
+\begin{itemize}[noitemsep]
+    \item \textbf{Usability Satisfaction (SUS Adaptasi Petani):} Mengukur kepuasan menyeluruh terhadap antarmuka menggunakan kuesioner \textit{System Usability Scale} (SUS) 10 butir bahasa lugas. Target skor: $\ge 70$ (Grade B / \textit{Acceptable}). Reliabel karena Cronbach's $\alpha \ge 0.85$.
+    \item \textbf{Agronomic Trust \& Actionability (Engaging):} Mengukur tingkat kepercayaan terhadap diagnosis dan kesediaan mempraktikkan dosis rekomendasi menggunakan Skala Likert 1--5. Target rata-rata: $\ge 4.0 / 5.0$.
+\end{itemize}
+
+\subsection{Dimensi Masalah Antarmuka (Usability Issues)}
+Setiap friksi interaksi diklasifikasikan menggunakan skala keparahan (\textit{severity rating}) pada Tabel~\ref{tab:severity}.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Klasifikasi Tingkat Keparahan Masalah Antarmuka (\textit{Usability Issues}).}
+\label{tab:severity}
+\begin{tabularx}{\textwidth}{c l X c}
+\toprule
+\textbf{Tingkat} & \textbf{Klasifikasi} & \textbf{Definisi Operasional di Lapangan} & \textbf{Toleransi Target} \\
+\midrule
+\textbf{4} & Fatal / Catastrophic & Bot berhenti merespons (\textit{deadlock}) atau memberikan rekomendasi dosis racun berbahaya. & \textbf{0 Insiden} \\
+\textbf{3} & Mayor (Major) & Petani gagal menyelesaikan tugas mandiri atau foto berulang kali ditolak tanpa panduan solusi. & $< 10\%$ Kasus \\
+\textbf{2} & Minor (Minor) & Petani salah mengetik nomor menu namun dapat pulih sendiri setelah membaca pesan petunjuk bot. & Toleransi Wajar \\
+\textbf{1} & Kosmetik (Cosmetic) & Format teks tebal terlalu padat atau jeda waktu balas sedikit lebih lama dari biasanya. & Dicatat untuk P2 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ==============================================================================
+% BAB III: MODUL SKENARIO UJI TUGAS
+% ==============================================================================
+\section{Modul Skenario Uji Tugas Lapangan}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Modul Skenario Uji Lapangan Khusus Petani Cabai (Paket A).}
+\label{tab:skenario_cabai_lengkap}
+\begin{tabularx}{\textwidth}{c l X X l}
+\toprule
+\textbf{Tugas} & \textbf{Atribut Diuji} & \textbf{Instruksi Petani} & \textbf{Respons Sistem yang Diharapkan} & \textbf{Kriteria Lolos} \\
+\midrule
+\textbf{T1} & Learnability & Sapa bot (``Halo''), lalu buka menu daftar penyakit cabai. & Bot membalas ramah, menyajikan menu 1--6, dan 6 opsi penyakit cabai. & Menu aktif ($< 60$ dtk). \\
+\textbf{T2} & Effective & Kirimkan 1 foto daun cabai bergejala keriting/patek. & OpenCV memeriksa mutu foto; Gemini mengidentifikasi patogen \& 3 pilar solusi. & Diagnosis akurat \& jelas. \\
+\textbf{T3} & Actionability & Tanya: \textit{``Cabai umur 40 hari bunga rontok, pupuk apa?''} & Bot mendeteksi fase generatif, menyarankan pupuk MKP + Kalsium Boron semprot. & Dosis mudah dipahami. \\
+\textbf{T4} & Utility & Cek harga cabai rawit merah lokal hari ini. & Bot menyajikan perbandingan harga petani vs.\ pasar konsumen terkini. & Angka harga terbaca. \\
+\textbf{T5} & Safety & Tanya prakiraan cuaca dan jam aman semprot obat hama hari ini. & Bot menampilkan ramalan hujan dan jam semprot aman (\textit{Spray Advisory}). & Paham jadwal aman. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Modul Skenario Uji Lapangan Khusus Petani Padi (Paket B).}
+\label{tab:skenario_padi_lengkap}
+\begin{tabularx}{\textwidth}{c l X X l}
+\toprule
+\textbf{Tugas} & \textbf{Atribut Diuji} & \textbf{Instruksi Petani} & \textbf{Respons Sistem yang Diharapkan} & \textbf{Kriteria Lolos} \\
+\midrule
+\textbf{T1} & Learnability & Sapa bot dan pilih nomor menu untuk daftar masalah padi. & Bot menyajikan menu 5 penyakit utama padi (Blas, HDB, Sundep, Tungro, WBC). & Navigasi angka lancar. \\
+\textbf{T2} & Effective & Kirim foto daun padi mengering coklat / belah ketupat. & Bot mendeteksi Blas/Kresek, menyarankan sanitasi air sawah \& bahan aktif. & Diagnosis keluar tepat. \\
+\textbf{T3} & Actionability & Tanya: \textit{``Padi umur 20 hari, pemupukan pertama apa?''} & Bot merinci dosis vegetatif (Urea terukur + NPK) dan bahaya kelebihan Urea. & Takaran rasional & aman. \\
+\textbf{T4} & Utility & Cek harga Gabah Kering Panen (GKP) setempat. & Bot menampilkan acuan harga GKP per kg terkini dari basis data PIHPS. & Mudah dibandingkan. \\
+\textbf{T5} & Safety & Tanya apakah sore ini hujan dan jam semprot wereng. & Bot menyajikan estimasi cuaca dan jendela waktu penyemprotan insektisida. & Jadwal semprot jelas. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ==============================================================================
+% BAB IV: LEMBAR INSTRUMEN PENGUJIAN SIAP CETAK
+% ==============================================================================
+\section{Lembar Instrumen Pengujian Siap Cetak}
+
+\subsection{Formulir A: Lembar Observasi Kinerja Fasilitator (\textit{Performance Log})}
+\noindent
+Kode Responden : P-\dots\dots\ \quad Usia : \dots\dots\ Thn \quad Komoditas : [ \ ] Cabai \quad [ \ ] Padi \\
+Kemahiran WhatsApp : [ \ ] Pemula \quad [ \ ] Cukup Terbiasa \quad [ \ ] Sangat Mahir
+
+\vspace{0.2cm}
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{c c c c X}
+\toprule
+\textbf{Tugas} & \textbf{TCR? (Y/T)} & \textbf{Frekuensi Eror} & \textbf{ToT (Menit:Detik)} & \textbf{Usability Issue yang Teramati \& Catatan Pengamat} \\
+\midrule
+T1 (Menu)  & [ \ ] Y \quad [ \ ] T & \dots\dots\ kali & \dots\dots : \dots\dots & \\[0.2cm]
+T2 (Foto)  & [ \ ] Y \quad [ \ ] T & \dots\dots\ kali & \dots\dots : \dots\dots & \\[0.2cm]
+T3 (Pupuk) & [ \ ] Y \quad [ \ ] T & \dots\dots\ kali & \dots\dots : \dots\dots & \\[0.2cm]
+T4 (Harga) & [ \ ] Y \quad [ \ ] T & \dots\dots\ kali & \dots\dots : \dots\dots & \\[0.2cm]
+T5 (Cuaca) & [ \ ] Y \quad [ \ ] T & \dots\dots\ kali & \dots\dots : \dots\dots & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Formulir B: Kuesioner SUS Adaptasi Bahasa Petani (10 Butir)}
+\noindent
+\textit{Pilihan: 1 = Sangat Tidak Setuju (STS), 2 = Tidak Setuju (TS), 3 = Ragu-ragu (N), 4 = Setuju (S), 5 = Sangat Setuju (SS).}
+
+\vspace{0.2cm}
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{c X c c c c c}
+\toprule
+\textbf{No} & \textbf{Pernyataan Evaluasi (Bahasa Lugas \& Ramah Petani)} & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4} & \textbf{5} \\
+\midrule
+1  & Saya merasa ingin rutin memakai bot WA ini untuk membantu merawat tanaman. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+2  & Saya merasa bot WA ini terlalu rumit dan membingungkan untuk dipakai. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+3  & Saya merasa cara memilih menu nomor di bot ini sangat mudah dipahami. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+4  & Saya merasa membutuhkan bantuan orang lain setiap kali ingin memakai bot ini. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+5  & Saya merasa fitur di bot ini (foto penyakit, harga, cuaca, pupuk) tersusun rapi. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+6  & Saya merasa jawaban bot ini sering membingungkan atau tidak konsisten. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+7  & Saya yakin sebagian besar teman-teman petani akan cepat bisa memakai bot ini. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+8  & Saya merasa cara kerja bot ini merepotkan saat dibawa bekerja ke sawah/kebun. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+9  & Saya merasa tenang dan yakin atas saran obat/pupuk yang diberikan bot. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+10 & Saya harus belajar banyak hal dulu sebelum lancar memakai bot WhatsApp ini. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{equation}
+    Skor_{SUS} = \left[ \sum_{i \in \{1,3,5,7,9\}} (R_i - 1) + \sum_{j \in \{2,4,6,8,10\}} (5 - R_j) \right] \times 2.5
+\end{equation}
+
+\subsection{Formulir C: Kuesioner Kepuasan \& Kepercayaan Agronomi (Skala 1--5)}
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{c l X c c c c c}
+\toprule
+\textbf{Kode} & \textbf{Dimensi} & \textbf{Pernyataan Penilaian Lapangan} & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4} & \textbf{5} \\
+\midrule
+K1 & Kejelasan & Istilah penyakit dan pupuk dari bot mudah dimengerti tanpa kata asing. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+K2 & Diagnosis & Penyakit hasil tebakan foto bot cocok dengan gejala di tanaman saya. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+K3 & Kepraktisan & Bahan obat/pupuk yang disarankan bot mudah dibeli di kios terdekat. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+K4 & Takaran & Takaran dosis pupuk dan semprot dari bot aman dan masuk akal. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+K5 & Harga & Info harga cabai/padi membantu saya mengetahui kisaran harga jual wajar. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+K6 & Cuaca & Pengingat jam semprot berguna agar obat tidak luntur kena air hujan. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+K7 & Rujukan & Saat bot ragu lalu menyarankan ke PPL, langkah itu sangat bijak dan tepat. & [ \ ] & [ \ ] & [ \ ] & [ \ ] & [ \ ] \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Formulir D: Log Pelaporan Usability Issues (Katalog Friksi Pengguna)}
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{c c X c X c}
+\toprule
+\textbf{ID} & \textbf{Tugas} & \textbf{Deskripsi Masalah / Friksi Pengguna} & \textbf{Severity} & \textbf{Rencana Solusi Desain (\textit{Fix})} & \textbf{Status} \\
+\midrule
+UI-01 & T2 & Foto daun ditolak akibat pantulan sinar terik matahari. & 3 (Mayor) & Pandu petani memayungi daun dengan caping sebelum foto. & Open \\
+UI-02 & T1 & Petani ketik kata ``satu'' bukan angka ``1''. & 2 (Minor) & Dukung regex kata bilangan pada router intensi bot. & Open \\
+UI-03 & T3 & Ragu singkatan pupuk ``MKP'' di kios dusun. & 2 (Minor) & Sertakan sinonim pupuk fosfat-kalium kristal. & Open \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ==============================================================================
+% BAB V: TEMPLATE REKAPITULASI DAN TINDAK LANJUT
+% ==============================================================================
+\section{Template Rekapitulasi Data dan Rencana Tindak Lanjut}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Format Rekapitulasi Data Evaluasi Pengguna (10 Responden).}
+\label{tab:rekap_data}
+\begin{tabularx}{\textwidth}{c c c c c c c c}
+\toprule
+\textbf{ID} & \textbf{Usia} & \textbf{TCR (\%)} & \textbf{ToT Median (dtk)} & \textbf{Eror} & \textbf{Skor SUS} & \textbf{Grade SUS} & \textbf{Likert (1--5)} \\
+\midrule
+P-01 s/d P-10 & \dots\dots & \dots\dots & \dots\dots & \dots\dots & \dots\dots & \dots\dots & \dots\dots \\
+\midrule
+\textbf{Rata-rata} & \textbf{--} & \textbf{\dots\dots\%} & \textbf{\dots\dots dtk} & \textbf{\dots\dots} & \textbf{\dots\dots} & \textbf{Grade \dots} & \textbf{\dots\dots / 5.0} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Matriks Tindak Lanjut Pasca Evaluasi (\textit{Action Plan})}
+\begin{itemize}[noitemsep]
+    \item \textbf{Prioritas P0 (Hambatan Fatal):} Kalibrasi batas ketajaman OpenCV jika $TCR < 70\%$ pada gawai murah, dan penegakan \textit{guardrail} 0.70 untuk mencegah salah dosis kimia sintetis.
+    \item \textbf{Prioritas P1 (Bahasa \& Kenyamanan):} Membatasi balasan teks diagnosis maksimal 3 balon obrolan WA agar tidak melelahkan dibaca di layar sentuh.
+    \item \textbf{Prioritas P2 (Skalabilitas Lanjutan):} Pengembangan fitur \textit{voice note} bahasa Jawa untuk merangkul petani sepuh yang memiliki kendala penglihatan dan pengetikan teks.
+\end{itemize}
+
+\end{document}

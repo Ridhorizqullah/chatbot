@@ -8,27 +8,35 @@ services:
     depends_on:
       - waha
     ports:
-      - "8000:8000"
+      # Hanya bisa diakses dari VPS itu sendiri. WAHA memanggil bot lewat jaringan Docker internal.
+      # Jika nanti memakai Meta Cloud API (butuh webhook publik), pasang reverse proxy HTTPS (Caddy/Nginx).
+      - "127.0.0.1:8000:8000"
     env_file:
       - .env
     environment:
-      - APP_ENV=${APP_ENV:-development}
+      # Server di VPS selalu production (mematikan auto-reload, /docs, dan fallback keamanan mode dev)
+      - APP_ENV=production
       - WAHA_BASE_URL=http://waha:3000
     volumes:
-      # Live code reload untuk mempermudah perbaikan/development tanpa rebuild berulang
-      - ./:/app
-      - /app/.venv
+      # Kode TIDAK di-mount lagi: kode diambil dari image. Setelah ubah kode jalankan: docker compose up -d --build
       - ./logs:/app/logs
       - ./data:/app/data
     networks:
       - tanipintar-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   waha:
     image: devlikeapro/waha
     container_name: waha
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      # Dashboard WAHA tidak dibuka ke internet. Akses dari laptop lewat SSH tunnel:
+      #   ssh -L 3000:localhost:3000 user@IP_VPS  lalu buka http://localhost:3000/dashboard
+      - "127.0.0.1:3000:3000"
     env_file:
       - .env
     environment:
@@ -45,8 +53,8 @@ services:
       - WAHA_DASHBOARD_ENABLED=true
       - WAHA_DASHBOARD_USERNAME=${WAHA_DASHBOARD_USERNAME:-admin}
       - WAHA_DASHBOARD_PASSWORD=${WAHA_DASHBOARD_PASSWORD:-}
-      - WAHA_DASHBOARD_NO_PASSWORD=${WAHA_DASHBOARD_NO_PASSWORD:-True}
-      - WAHA_NO_API_KEY=${WAHA_NO_API_KEY:-True}
+      - WAHA_DASHBOARD_NO_PASSWORD=${WAHA_DASHBOARD_NO_PASSWORD:-False}
+      - WAHA_NO_API_KEY=${WAHA_NO_API_KEY:-False}
       - WAHA_API_KEY=${WAHA_API_KEY:-}
 
       # Konfigurasi Webhook & Keamanan HMAC
@@ -71,6 +79,11 @@ services:
       retries: 3
     networks:
       - tanipintar-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   waha_files:

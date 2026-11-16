@@ -9,3 +9,12 @@ tests/
 .agents/
 data/dataset_foto/
 *.log
+.pytest_cache/
+scratch/
+docs/
+artikel/
+*.docx
+*.zip
+*.xlsx
+.env.*
+!.env.example

@@ -1,4 +1,5 @@
 import uuid
+import hashlib
 from typing import Optional
 from database.supabase_client import get_supabase
 from core.config import settings
@@ -19,10 +20,15 @@ class StorageService:
     ) -> Optional[str]:
         """Mengunggah foto ke Supabase Storage bucket dan mengembalikan URL publik/aksesnya."""
         supabase = get_supabase()
+        if supabase is None:
+            logger.warning("Supabase belum dikonfigurasi, foto tidak diarsipkan.")
+            return None
         try:
             # Pastikan bucket ada atau gunakan bucket yang sudah dibuat
             file_extension = "jpg" if "jpeg" in content_type else "png"
-            unique_filename = f"{phone_number}/{uuid.uuid4().hex}.{file_extension}"
+            # Privasi: nomor HP petani tidak dipakai mentah di path (URL publik), cukup hash-nya
+            phone_hash = hashlib.sha256(phone_number.encode("utf-8")).hexdigest()[:16]
+            unique_filename = f"{phone_hash}/{uuid.uuid4().hex}.{file_extension}"
 
             res = supabase.storage.from_(self.bucket_name).upload(
                 path=unique_filename,

@@ -281,13 +281,27 @@ async def router_node(state: TaniState) -> Dict[str, Any]:
     if (has_known_loc or has_weather_kw or has_admin_kw) and not has_price_kw:
         return {"intent": "weather", "crop_context": detected_crop, "is_first_interaction": is_first_time}
 
+    # Indikasi kata gejala spesifik penyakit tanaman (bukan kata umum menu)
+    specific_symptoms = [
+        "bercak", "busuk", "kuning", "keriting", "layu", "rontok",
+        "ulat", "wereng", "kutu", "kutu kebul", "thrips", "jamur", "bakteri",
+        "kering", "bolong", "gosong", "bintik", "patek", "kresek", "sundep", "beluk", "tungro"
+    ]
+    has_specific_symptom = any(s in clean_msg for s in specific_symptoms)
+    has_symptom_word = has_specific_symptom or any(s in clean_msg for s in ["hama", "daun", "buah", "batang", "akar", "malai", "bulir"])
+
+    # Jika petani jelas-jelas mengeluhkan gejala penyakit atau serangan hama (misal: "kutu kebul", "daun keriting", "busuk patek"),
+    # PRIORITASKAN langsung ke Diagnosis Agent (Semantic SOP RAG) agar mendapatkan analisis penyakit dan rotasi pestisida terarah!
+    if has_specific_symptom:
+        return {"intent": "diagnosis", "crop_context": detected_crop, "is_first_interaction": is_first_time}
+
     # ==============================================================
     # 5. Rekomendasi Pupuk & Dosis Tanaman
     # ==============================================================
     fertilizer_keywords = [
-        "pupuk", "pemupukan", "dosis", "urea", "npk", "sp-36", "sp36", "kcl", "kno3",
-        "kalsium", "silika", "obat", "pestisida", "fungisida", "insektisida", "bakterisida",
-        "semprot apa", "hst", "fase vegetatif", "fase generatif", "bunting",
+        "pupuk", "pemupukan", "dosis pupuk", "urea", "npk", "sp-36", "sp36", "kcl", "kno3",
+        "kalsium", "silika", "takaran pupuk", "pupuk dasar", "pupuk susulan", "kocor",
+        "hst", "fase vegetatif", "fase generatif", "bunting",
         "dosis pupuk & obat", "dosis pupuk dan obat", "dosis pupuk obat"
     ]
     has_fert_kw = any(k in clean_msg for k in fertilizer_keywords)
@@ -323,15 +337,6 @@ async def router_node(state: TaniState) -> Dict[str, Any]:
         any(clean_msg == k or clean_msg.startswith(f"{k} ") for k in greeting_triggers) or
         any(k in clean_msg for k in ["bisa bantu", "mau tanya", "selamat pagi", "selamat siang", "selamat sore", "selamat malam"])
     )
-
-    # Indikasi kata gejala spesifik penyakit tanaman (bukan kata umum menu)
-    specific_symptoms = [
-        "bercak", "busuk", "kuning", "keriting", "layu", "rontok",
-        "ulat", "wereng", "kutu", "jamur", "bakteri",
-        "kering", "bolong", "gosong", "bintik", "patek", "kresek"
-    ]
-    has_specific_symptom = any(s in clean_msg for s in specific_symptoms)
-    has_symptom_word = has_specific_symptom or any(s in clean_msg for s in ["hama", "daun", "buah", "batang", "akar", "malai", "bulir"])
 
     is_numeric_input = clean_msg.isdigit() or clean_msg in []  
     if not is_numeric_input and not has_symptom_word and is_greeting_match:

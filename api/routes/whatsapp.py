@@ -55,6 +55,34 @@ def verify_waha_hmac(raw_body: bytes, headers: dict) -> bool:
     return hmac.compare_digest(expected_signature, clean_signature)
 
 
+def verify_meta_signature(raw_body: bytes, headers: dict) -> bool:
+    """
+    Memverifikasi webhook Meta Cloud API via header X-Hub-Signature-256 (HMAC SHA-256 dengan App Secret).
+    Di production webhook ini fail-closed: ditolak jika provider bukan 'meta' atau META_APP_SECRET kosong.
+    """
+    is_production = settings.app_env == "production"
+
+    if is_production and settings.whatsapp_provider != "meta":
+        logger.warning("[Meta Security] Webhook Meta diterima padahal provider bukan 'meta'. Request ditolak.")
+        return False
+
+    secret = settings.meta_app_secret
+    if not secret:
+        if is_production:
+            logger.warning("[Meta Security] META_APP_SECRET belum dikonfigurasi di production. Webhook ditolak (fail-closed).")
+            return False
+        # Di development lokal, izinkan jika secret belum diset
+        return True
+
+    signature = headers.get("x-hub-signature-256", "")
+    if not signature.startswith("sha256="):
+        logger.warning("[Meta Security] Header X-Hub-Signature-256 tidak ada/tidak valid. Request ditolak.")
+        return False
+
+    expected_signature = hmac.new(secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected_signature, signature[len("sha256="):].strip())
+
+
 @router.get("")
 async def verify_webhook(
     hub_mode: str = Query(None, alias="hub.mode"),
@@ -357,7 +385,17 @@ async def handle_whatsapp_event(request: Request, background_tasks: BackgroundTa
     Mendukung pesan teks, lampiran gambar, dan interaksi Button/List.
     """
     try:
-        body = await request.json()
+        raw_body = await request.body()
+
+        # Verifikasi keaslian webhook Meta (X-Hub-Signature-256)
+        if not verify_meta_signature(raw_body, dict(request.headers)):
+            return Response(
+                content=json.dumps({"status": "error", "message": "Invalid signature"}),
+                media_type="application/json",
+                status_code=status.HTTP_401_UNAUTHORIZED
+            )
+
+        body = json.loads(raw_body.decode("utf-8")) if raw_body else {}
 
         entry = body.get("entry", [])
         if not entry:
@@ -415,8 +453,8 @@ async def handle_whatsapp_event(request: Request, background_tasks: BackgroundTa
         return {"status": "success", "message": "Event queued for processing"}
 
     except Exception as e:
-        logger.error(f"Error saat menerima webhook WhatsApp: {e}")
-        return {"status": "error", "message": str(e)}
+        logger.error(f"Error saat menerima webhook WhatsApp: {e}", exc_info=True)
+        return {"status": "error", "message": "Internal error"}
 
 
 @router.post("/waha")
@@ -536,7 +574,7 @@ async def handle_waha_event(request: Request, background_tasks: BackgroundTasks)
 
     except Exception as e:
         logger.error(f"Error saat menerima webhook WAHA: {e}", exc_info=True)
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": "Internal error"}
 
 
 # ==============================================================

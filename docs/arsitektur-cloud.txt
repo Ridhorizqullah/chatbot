@@ -1,0 +1,474 @@
+# Arsitektur Lengkap TaniPintar Bot
+
+Saya sarankan TaniPintar dibangun dengan pendekatan Cloud-Native, Modular Monolith, dan Event-Driven Processing. Jadi, sistem tetap punya pemisahan komponen yang jelas, tetapi tidak langsung dibuat menjadi banyak microservices yang justru membebani VPS 2 vCPU dan RAM 2 GB.
+
+Target arsitektur yang kita gunakan:
+
+- Tencent Lighthouse Singapore: menjalankan backend, WhatsApp gateway, worker, dan reverse proxy.
+- Tencent CloudBase PostgreSQL PG Mode: menggantikan Supabase untuk database, autentikasi, RLS, dan vector database.
+- Tencent Cloud Storage: menyimpan foto tanaman dan dokumen pengetahuan.
+- Tencent TokenHub: menyediakan LLM, Vision, dan embedding.
+- BMKG dan sumber harga pasar terverifikasi: menyediakan data faktual cuaca dan harga komoditas.
+- Kubernetes/K3s: disiapkan sebagai tahap pengembangan berikutnya, bukan dipaksakan pada VPS 2 GB.
+
+## 1. Diagram arsitektur sistem
+
+[Medium](https://images.openai.com/static-rsc-4/ad_f6MrLz5zVtNvpdK7_N7Af7N0NfDYwMzp9vMkwDC-aNMHdcgvDLUMIpWqIy1LkNsnNchL2k0kgW6Pq2V0lzC08AcpMFm7Cn4OBhTULMCTt7zhRsgR6p9uniNU5p0tf81EnWd8Y8gjoMoU3Yr1EvLXhIb-liEyuxIxJIPeLRT8?purpose=inline)
+
+[medium.com](https://medium.com/%40sanket.ai/building-a-smart-whatsapp-chatbot-with-python-and-fastapi-a-step-by-step-guide-36c9c70f5715?utm_source=chatgpt.com)
+
+Berikut gambaran arsitektur teknis yang akan kita jadikan acuan implementasi:
+
+\#chatgpt-mermaid-\_r_12n\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;fill:rgb(237, 237, 237);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_12n\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_12n\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_12n\_ .error-icon{fill:rgb(48, 48, 48);}#chatgpt-mermaid-\_r_12n\_ .error-text{fill:rgb(237, 237, 237);stroke:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_12n\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_12n\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_12n\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_12n\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_12n\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_12n\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_12n\_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_12n\_ .marker.cross{stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_12n\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;}#chatgpt-mermaid-\_r_12n\_ p{margin:0;}#chatgpt-mermaid-\_r_12n\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_12n\_ .cluster-label text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_12n\_ .cluster-label span{color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_12n\_ .cluster-label span p{background-color:transparent;}#chatgpt-mermaid-\_r_12n\_ .label text,#chatgpt-mermaid-\_r_12n\_ span{fill:rgb(237, 237, 237);color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_12n\_ .node rect,#chatgpt-mermaid-\_r_12n\_ .node circle,#chatgpt-mermaid-\_r_12n\_ .node ellipse,#chatgpt-mermaid-\_r_12n\_ .node polygon,#chatgpt-mermaid-\_r_12n\_ .node path{fill:rgb(9, 23, 44);stroke:rgb(31, 78, 148);stroke-width:1px;}#chatgpt-mermaid-\_r_12n\_ .rough-node .label text,#chatgpt-mermaid-\_r_12n\_ .node .label text,#chatgpt-mermaid-\_r_12n\_ .image-shape .label,#chatgpt-mermaid-\_r_12n\_ .icon-shape .label{text-anchor:middle;}#chatgpt-mermaid-\_r_12n\_ .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#chatgpt-mermaid-\_r_12n\_ .rough-node .label,#chatgpt-mermaid-\_r_12n\_ .node .label,#chatgpt-mermaid-\_r_12n\_ .image-shape .label,#chatgpt-mermaid-\_r_12n\_ .icon-shape .label{text-align:center;}#chatgpt-mermaid-\_r_12n\_ .node.clickable{cursor:pointer;}#chatgpt-mermaid-\_r_12n\_ .root .anchor path{fill:rgb(175, 175, 175)!important;stroke-width:0;stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_12n\_ .arrowheadPath{fill:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_12n\_ .edgePath .path{stroke:rgb(175, 175, 175);stroke-width:1px;}#chatgpt-mermaid-\_r_12n\_ .flowchart-link{stroke:rgb(175, 175, 175);fill:none;}#chatgpt-mermaid-\_r_12n\_ .edgeLabel{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-\_r_12n\_ .edgeLabel p{background-color:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_12n\_ .edgeLabel rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_12n\_ .labelBkg{background-color:rgba(0, 0, 0, 0.5);}#chatgpt-mermaid-\_r_12n\_ .cluster rect{fill:rgb(48, 48, 48);stroke:rgba(255, 255, 255, 0.15);stroke-width:1px;}#chatgpt-mermaid-\_r_12n\_ .cluster text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_12n\_ .cluster span{color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_12n\_ div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:12px;background:rgb(48, 48, 48);border:1px solid rgba(255, 255, 255, 0.15);border-radius:2px;pointer-events:none;z-index:100;}#chatgpt-mermaid-\_r_12n\_ .flowchartTitleText{text-anchor:middle;font-size:18px;fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_12n\_ rect.text{fill:none;stroke-width:0;}#chatgpt-mermaid-\_r_12n\_ .icon-shape,#chatgpt-mermaid-\_r_12n\_ .image-shape{background-color:rgb(0, 0, 0);text-align:center;}#chatgpt-mermaid-\_r_12n\_ .icon-shape p,#chatgpt-mermaid-\_r_12n\_ .image-shape p{background-color:rgb(0, 0, 0);padding:2px;}#chatgpt-mermaid-\_r_12n\_ .icon-shape .label rect,#chatgpt-mermaid-\_r_12n\_ .image-shape .label rect{opacity:0.5;background-color:rgb(0, 0, 0);fill:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_12n\_ .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#chatgpt-mermaid-\_r_12n\_ .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#chatgpt-mermaid-\_r_12n\_ .node .neo-node{stroke:rgb(31, 78, 148);}#chatgpt-mermaid-\_r_12n\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_12n\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_12n\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_12n\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_12n\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_12n\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_12n\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_12n\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_12n\_ [data-look="neo"].node .neo-line path{stroke:rgb(31, 78, 148);filter:none;}#chatgpt-mermaid-\_r_12n\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_12n\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_12n\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_12n\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_12n\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_12n\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_12n\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_12n\_ .node text{font-size:14px;font-weight:600;letter-spacing:normal;fill:rgb(153, 206, 255);}#chatgpt-mermaid-\_r_12n\_ .edgeLabels text{font-size:13px;font-weight:600;letter-spacing:-0.08px;fill:rgb(153, 206, 255);}#chatgpt-mermaid-\_r_12n\_ .node tspan[font-weight="normal"],#chatgpt-mermaid-\_r_12n\_ .edgeLabels tspan[font-weight="normal"]{font-weight:600;}#chatgpt-mermaid-\_r_12n\_ .edgeLabel .label rect{opacity:1;rx:13px;ry:13px;fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-width:1px;}#chatgpt-mermaid-\_r_12n\_ .node rect,#chatgpt-mermaid-\_r_12n\_ .node circle,#chatgpt-mermaid-\_r_12n\_ .node ellipse,#chatgpt-mermaid-\_r_12n\_ .node polygon,#chatgpt-mermaid-\_r_12n\_ .node path{fill:rgb(0, 40, 77);stroke:rgba(255, 255, 255, 0.1);stroke-width:1px;}#chatgpt-mermaid-\_r_12n\_ .node rect{rx:16px;ry:16px;}#chatgpt-mermaid-\_r_12n\_ .mermaid-decision .label-container{fill:rgb(0, 14, 26);stroke:rgb(26, 62, 95);stroke-dasharray:2,2;}#chatgpt-mermaid-\_r_12n\_ .edgePaths .flowchart-link{stroke:rgb(175, 175, 175);stroke-width:1px;stroke-linecap:round;stroke-linejoin:round;}#chatgpt-mermaid-\_r_12n\_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_12n\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";}External Verified DataTencent Cloud StorageTencent CloudBase PostgreSQL PG ModeTencent TokenHubTencent Lighthouse Singapore · 2 vCPU / 2 GBBMKG Weather APIVerified Market Price SourcesConsultation PhotosDisease Image GalleryKnowledge DocumentsPostgreSQLAuth / JWTGRANT + Row Level SecuritypgvectorStorage MetadataHy3 · Chat / ReasoningVision Model · Image DiagnosisText EmbeddingImage-Text EmbeddingFastAPI WebhookNginx · HTTPS / Reverse ProxyFastAPI ApplicationAuthentication & AuthorizationWebhook DeduplicationBackground Job QueueWorkerLangGraph OrchestratorIntent RouterDiagnosis AgentMarket AgentWeather AgentFertilizer AgentAudit & LoggingPetani / Admin / HRD?WhatsAppWAHA Gateway
+
+Catatan: Diagram ini menunjukkan aliran logis. Untuk deployment awal, sebagian besar modul backend berada dalam satu aplikasi FastAPI dan satu proses worker, bukan satu container untuk setiap agent. Komponen Auth juga perlu disesuaikan dengan mekanisme autentikasi yang benar-benar tersedia di CloudBase PG Mode.
+
+CloudBase PG Mode dipilih karena menyediakan PostgreSQL, Auth/JWT, PostgREST, GRANT/RLS, Storage, dan dukungan pgvector. Namun, kompatibilitasnya dengan setiap fitur Supabase tetap harus diuji terhadap implementasi TaniPintar.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://docs.cloudbase.net\&sz=32)
+
+腾讯云开发 CloudBase - AI 原生后端一体化平台+2
+
+
+
+## 2. Pembagian komponen dan tanggung jawab
+
+| Komponen         | Teknologi             | Tanggung jawab                                   |
+| ---------------- | --------------------- | ------------------------------------------------ |
+| Reverse proxy    | Nginx                 | HTTPS, routing, batas request                    |
+| Backend API      | FastAPI               | Webhook, admin API, health check                 |
+| Orchestrator     | LangGraph             | Mengatur alur konsultasi                         |
+| WhatsApp gateway | WAHA                  | Menerima dan mengirim pesan                      |
+| Job queue        | Redis + worker        | Memproses pekerjaan berat secara asynchronous    |
+| AI chat          | TokenHub / Hy3        | Memahami pertanyaan dan menyusun jawaban         |
+| AI vision        | TokenHub Vision       | Menganalisis foto tanaman                        |
+| Text embedding   | TokenHub embedding    | Pencarian pengetahuan berbasis teks              |
+| Visual embedding | TokenHub VL embedding | Pencarian kemiripan foto penyakit                |
+| Database         | CloudBase PostgreSQL  | Data pengguna, konsultasi, harga, cuaca          |
+| Vector search    | pgvector              | Pencarian semantik dan visual                    |
+| Object storage   | Tencent Cloud Storage | Foto, dokumen, dan arsip                         |
+| Monitoring       | Log + health checks   | Memantau error, latency, dan penggunaan resource |
+
+### Modul internal FastAPI
+
+Saya sarankan struktur kode tetap modular seperti berikut:
+
+```
+TaniPintar/
+├── main.py
+├── api/
+│   ├── app.py
+│   └── routes/
+│       ├── whatsapp.py
+│       ├── admin.py
+│       ├── health.py
+│       └── auth.py
+│
+├── agents/
+│   ├── diagnosis_agent.py
+│   ├── market_agent.py
+│   ├── weather_agent.py
+│   ├── fertilizer_agent.py
+│   ├── prompts.py
+│   └── schemas.py
+│
+├── graph/
+│   ├── graph_builder.py
+│   ├── state.py
+│   ├── router.py
+│   └── nodes/
+│
+├── services/
+│   ├── whatsapp_service.py
+│   ├── session_service.py
+│   ├── price_service.py
+│   ├── weather_service.py
+│   ├── storage_service.py
+│   ├── visual_rag_service.py
+│   └── cv_preprocessor.py
+│
+├── providers/
+│   ├── llm_provider.py
+│   ├── vision_provider.py
+│   ├── embedding_provider.py
+│   └── tencent_tokenhub.py
+│
+├── database/
+│   ├── cloudbase_client.py
+│   ├── repository.py
+│   ├── models/
+│   └── migrations/
+│
+├── workers/
+│   ├── worker.py
+│   └── jobs/
+│
+├── core/
+│   ├── config.py
+│   ├── security.py
+│   ├── logger.py
+│   ├── dedup.py
+│   └── latency_tracker.py
+│
+├── tests/
+├── docker-compose.yml
+├── Dockerfile
+├── .env.example
+└── requirements.txt
+```
+
+Prinsip pentingnya: agent tidak boleh terikat langsung ke satu provider AI atau satu SDK database. Agent memanggil interface provider dan repository. Dengan demikian, model AI bisa diganti tanpa membongkar seluruh LangGraph.
+
+## 3. Alur kerja setiap fitur
+
+### A. Konsultasi penyakit tanaman melalui teks
+
+1. Petani mengirim pesan WhatsApp: "Daun cabai saya menguning dan menggulung."
+2. WAHA meneruskan webhook ke FastAPI.
+3. FastAPI memvalidasi webhook, memeriksa duplikasi pesan, lalu memasukkan pekerjaan ke queue.
+4. Worker menjalankan LangGraph dan intent router memilih Diagnosis Agent.
+5. Diagnosis Agent mengambil pengetahuan relevan dari PostgreSQL dan pgvector.
+6. Hy3 menyusun analisis berdasarkan gejala dan sumber pengetahuan yang ditemukan.
+7. Jawaban dikirim melalui WAHA dan riwayat konsultasi disimpan.
+
+### B. Diagnosis penyakit melalui foto
+
+1. Petani mengirim foto daun atau tanaman.
+2. Foto disimpan di Cloud Storage menggunakan bucket privat.
+3. Worker memeriksa ukuran, format, dan kualitas gambar.
+4. Vision Model melakukan analisis visual.
+5. Visual RAG mencari foto penyakit serupa menggunakan embedding visual dan pgvector.
+6. Hasil Vision, gejala, dan referensi pengetahuan digabungkan oleh Diagnosis Agent.
+7. LLM menyusun hasil dengan tingkat keyakinan dan langkah penanganan yang relevan.
+8. Foto, hasil diagnosis, dan riwayat disimpan; jawaban dikirim ke WhatsApp.
+
+Hasil diagnosis jangan ditampilkan sebagai kepastian mutlak. Jika foto buram atau gejalanya tidak cukup, bot harus meminta foto tambahan atau mengarahkan petani untuk pemeriksaan lapangan.
+
+### C. Informasi harga pasar
+
+1. Petani bertanya harga cabai di wilayahnya.
+2. Market Agent membaca data dari sumber harga yang sudah diverifikasi.
+3. Price Service memeriksa komoditas, wilayah, satuan, dan tanggal pembaruan.
+4. LLM hanya membantu menjelaskan data tersebut.
+5. Bot mengirim harga, lokasi, satuan, tanggal data, dan sumber.
+
+Aturan wajib: jangan mengisi harga yang tidak tersedia dengan angka buatan AI. Bedakan data aktual, data historis, dan data simulasi.
+
+### D. Informasi cuaca
+
+1. Petani mengirim lokasi atau memilih wilayah.
+2. Weather Service mengubah lokasi menjadi kode wilayah yang dibutuhkan.
+3. Service mengambil prakiraan dari BMKG.
+4. Jika sumber utama gagal, gunakan fallback yang sudah dikonfigurasi.
+5. Bot menjelaskan prakiraan, waktu berlaku, dan sumber data.
+
+### E. Rekomendasi pupuk dan pestisida
+
+1. Petani menyampaikan tanaman, umur tanaman, dan gejala.
+2. Fertilizer Agent mengambil katalog dan knowledge base.
+3. LLM menyusun rekomendasi berdasarkan data yang tersedia.
+4. Sistem menampilkan dosis, cara aplikasi, peringatan, dan sumber referensi jika datanya tersedia.
+
+Untuk pestisida, rekomendasi harus mengacu pada label resmi produk dan aturan penggunaan. AI tidak boleh mengarang dosis atau mencampurkan produk tanpa dasar yang tervalidasi.
+
+## 4. Rancangan database
+
+Saya sarankan membagi database berdasarkan domain supaya data konsultasi tidak bercampur dengan data katalog dan data operasional.
+
+\#chatgpt-mermaid-\_r_141\_{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;fill:rgb(237, 237, 237);}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#chatgpt-mermaid-\_r_141\_ .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_141\_ .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#chatgpt-mermaid-\_r_141\_ .error-icon{fill:rgb(48, 48, 48);}#chatgpt-mermaid-\_r_141\_ .error-text{fill:rgb(237, 237, 237);stroke:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_141\_ .edge-thickness-normal{stroke-width:1px;}#chatgpt-mermaid-\_r_141\_ .edge-thickness-thick{stroke-width:3.5px;}#chatgpt-mermaid-\_r_141\_ .edge-pattern-solid{stroke-dasharray:0;}#chatgpt-mermaid-\_r_141\_ .edge-thickness-invisible{stroke-width:0;fill:none;}#chatgpt-mermaid-\_r_141\_ .edge-pattern-dashed{stroke-dasharray:3;}#chatgpt-mermaid-\_r_141\_ .edge-pattern-dotted{stroke-dasharray:2;}#chatgpt-mermaid-\_r_141\_ .marker{fill:rgb(175, 175, 175);stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_141\_ .marker.cross{stroke:rgb(175, 175, 175);}#chatgpt-mermaid-\_r_141\_ svg{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";font-size:16px;}#chatgpt-mermaid-\_r_141\_ p{margin:0;}#chatgpt-mermaid-\_r_141\_ .entityBox{fill:rgb(9, 23, 44);stroke:rgb(31, 78, 148);}#chatgpt-mermaid-\_r_141\_ .relationshipLabelBox{fill:rgb(48, 48, 48);opacity:0.7;background-color:rgb(48, 48, 48);}#chatgpt-mermaid-\_r_141\_ .relationshipLabelBox rect{opacity:0.5;}#chatgpt-mermaid-\_r_141\_ .labelBkg{background-color:rgba(48, 48, 48, 0.5);}#chatgpt-mermaid-\_r_141\_ .edgeLabel{background-color:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_141\_ .edgeLabel .label rect{fill:rgb(0, 0, 0);}#chatgpt-mermaid-\_r_141\_ .edgeLabel .label text{fill:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_141\_ .edgeLabel .label{fill:rgb(31, 78, 148);font-size:14px;}#chatgpt-mermaid-\_r_141\_ .label{font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";color:rgb(237, 237, 237);}#chatgpt-mermaid-\_r_141\_ .edge-pattern-dashed{stroke-dasharray:8,8;}#chatgpt-mermaid-\_r_141\_ .node rect,#chatgpt-mermaid-\_r_141\_ .node circle,#chatgpt-mermaid-\_r_141\_ .node ellipse,#chatgpt-mermaid-\_r_141\_ .node polygon{fill:rgb(9, 23, 44);stroke:rgb(31, 78, 148);stroke-width:1px;}#chatgpt-mermaid-\_r_141\_ .relationshipLine{stroke:rgb(175, 175, 175);stroke-width:1px;fill:none;}#chatgpt-mermaid-\_r_141\_ .marker{fill:none!important;stroke:rgb(175, 175, 175)!important;stroke-width:1;}#chatgpt-mermaid-\_r_141\_ [data-look=neo].labelBkg{background-color:rgba(48, 48, 48, 0.5);}#chatgpt-mermaid-\_r_141\_ .node .neo-node{stroke:rgb(31, 78, 148);}#chatgpt-mermaid-\_r_141\_ [data-look="neo"].node rect,#chatgpt-mermaid-\_r_141\_ [data-look="neo"].cluster rect,#chatgpt-mermaid-\_r_141\_ [data-look="neo"].node polygon{stroke:url(#chatgpt-mermaid-\_r_141\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_141\_ [data-look="neo"].swimlane.cluster rect{filter:none;}#chatgpt-mermaid-\_r_141\_ [data-look="neo"].node path{stroke:url(#chatgpt-mermaid-\_r_141\_-gradient);stroke-width:1px;}#chatgpt-mermaid-\_r_141\_ [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_141\_ [data-look="neo"].node .neo-line path{stroke:rgb(31, 78, 148);filter:none;}#chatgpt-mermaid-\_r_141\_ [data-look="neo"].node circle{stroke:url(#chatgpt-mermaid-\_r_141\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_141\_ [data-look="neo"].node circle .state-start{fill:#000000;}#chatgpt-mermaid-\_r_141\_ [data-look="neo"].icon-shape .icon{fill:url(#chatgpt-mermaid-\_r_141\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_141\_ [data-look="neo"].icon-shape .icon-neo path{stroke:url(#chatgpt-mermaid-\_r_141\_-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#chatgpt-mermaid-\_r_141\_ :root{--mermaid-font-family:-apple-system-body,ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";}USERSuuididPKtextphone_numbertextdisplay_nametextroletimestamptzcreated_atCONSULTATIONSuuididPKuuiduser_idFKtextcrop_typetextstatustimestamptzcreated_atMESSAGESuuididPKuuidconsultation_idFKtextsendertextmessagetextexternal_message_idtimestamptzcreated_atDIAGNOSESuuididPKuuidconsultation_idFKuuiddisease_idFKtextresultnumericconfidencetextmodel_versiontimestamptzcreated_atDIAGNOSIS_IMAGESuuididPKuuiddiagnosis_idFKtextstorage_pathtextmime_typePLANT_DISEASESuuididPKtextnametextcrop_typetextsymptomstextdescriptionDISEASE_TREATMENTSuuididPKuuiddisease_idFKtexttreatmenttextdosage_referencetextsourceDISEASE_IMAGESuuididPKuuiddisease_idFKtextstorage_pathvectorembeddingUSER_LOCATIONSuuididPKuuiduser_idFKtextregion_codetextregion_nameWEATHER_RECORDSuuididPKuuidlocation_idFKjsonbforecasttextsourcetimestamptzfetched_atMARKET_PRICESuuididPKuuidcommodity_idFKtextregionnumericpricetextsourcetimestamptzrecorded_atCOMMODITIESuuididPKtextnametextunitAUDIT_LOGSuuididPKuuiduser_idFKtextactionjsonbmetadatatimestamptzcreated_atcreatescontainsproducesreferenceshasillustrated_byhasreceivesdescribesgenerates
+
+Ini rancangan konseptual, bukan SQL final. Skema sebenarnya perlu dicocokkan dengan tabel, foreign key, RPC, trigger, dan kebijakan RLS dari Supabase yang sudah ada.
+
+### Pembagian schema PostgreSQL
+
+| Schema                                            | Isi                                                              |
+| ------------------------------------------------- | ---------------------------------------------------------------- |
+| `auth`                                            | Identitas dan autentikasi pengguna                               |
+| `public`                                          | Profil, konsultasi, pesan, diagnosis, katalog, harga, cuaca      |
+| `storage`                                         | Metadata objek dan bucket                                        |
+| `extensions` atau schema ekstensi yang disediakan | Ekstensi PostgreSQL seperti pgvector, sesuai konfigurasi layanan |
+
+Aturan vector database:
+
+- Embedding teks dan embedding visual disimpan terpisah.
+- Jika model embedding teks yang dipilih menghasilkan 1024 dimensi, kolomnya harus `vector(1024)`.
+- Jika model visual menghasilkan 2048 dimensi, kolomnya harus `vector(2048)`.
+- Jangan mencampurkan embedding dari model yang berbeda dalam satu indeks pencarian.
+- Catat nama model dan versi embedding agar proses regenerasi dapat dilakukan.
+
+## 5. Arsitektur keamanan
+
+Ini bagian yang tidak boleh dilewatkan, terutama karena bot berinteraksi dengan nomor WhatsApp dan menyimpan foto petani.
+
+| Area             | Pengamanan                                                               |
+| ---------------- | ------------------------------------------------------------------------ |
+| WhatsApp webhook | Verifikasi signature/token sesuai jenis gateway                          |
+| Admin API        | JWT, role-based access control                                           |
+| Database         | RLS dan hak akses minimum                                                |
+| Cloud Storage    | Bucket privat dan signed URL dengan masa berlaku singkat                 |
+| API              | HTTPS, rate limit, validasi input                                        |
+| API Key          | Simpan di environment variable atau secret manager                       |
+| Queue            | Job ID unik dan idempotency                                              |
+| Log              | Jangan mencatat API key, token, atau isi data pribadi secara tidak perlu |
+| Foto             | Validasi MIME, ukuran, dan format file                                   |
+| AI               | Validasi output dan larangan mengarang data faktual                      |
+
+Khusus WAHA, jangan membuka dashboard administrasi tanpa autentikasi ke internet publik. Endpoint admin juga tidak boleh bisa diakses hanya dengan mengetahui URL-nya.
+
+## 6. Arsitektur deployment di Tencent Cloud
+
+## Tencent Lighthouse — Singapore
+
+Resource terbatas: 2 vCPU / 2 GB RAM
+
+Docker Compose
+
+Nginx
+
+HTTPS :443
+
+FastAPI
+
+API + LangGraph
+
+WAHA
+
+WhatsApp
+
+Redis + Worker
+
+Queue / jobs
+
+Container dipisahkan berdasarkan proses, bukan berdasarkan setiap agent.
+
+## Layanan Cloud Terpisah
+
+CloudBase PG Mode
+
+PostgreSQL + Auth + pgvector
+
+Cloud Storage
+
+Foto dan dokumen
+
+TokenHub
+
+LLM, Vision, Embedding
+
+BMKG + Data Harga
+
+Sumber data eksternal
+
+### Susunan container awal
+
+| Container | Fungsi                                      |
+| --------- | ------------------------------------------- |
+| `nginx`   | Reverse proxy dan HTTPS                     |
+| `api`     | FastAPI dan endpoint                        |
+| `waha`    | WhatsApp gateway                            |
+| `worker`  | Proses LangGraph dan pekerjaan asynchronous |
+| `redis`   | Queue dan cache sementara                   |
+
+Redis di sini adalah komponen tambahan yang perlu diawasi pemakaian memorinya. Database utama tetap di CloudBase, bukan di Redis.
+
+Jangan jalankan PostgreSQL, Ollama, atau VectorDB terpisah di VPS ini. Kita sudah punya database dan model AI di layanan cloud. OpenCV juga harus dibatasi dengan ukuran gambar dan jumlah proses bersamaan.
+
+### Contoh struktur Docker Compose
+
+Berikut hanya kerangka deployment, bukan konfigurasi siap produksi:
+
+```
+services:
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - api
+
+  api:
+    build: .
+    command: uvicorn api.app:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      - redis
+
+  worker:
+    build: .
+    command: python -m workers.worker
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      - redis
+
+  waha:
+    image: devlikeapro/waha
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - waha_data:/app/.sessions
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+volumes:
+  waha_data:
+  redis_data:
+```
+
+Untuk produksi, tambahkan autentikasi WAHA, health check, batas memori CPU, Redis password, jaringan internal Docker, konfigurasi TLS, rotasi log, serta kebijakan backup. Pastikan path volume WAHA sesuai versi image yang benar-benar digunakan.
+
+## 7. Konfigurasi environment
+
+Contoh `.env.example`:
+
+```
+# Application
+APP_ENV=production
+APP_SECRET_KEY=replace_me
+LOG_LEVEL=INFO
+
+# WhatsApp
+WAHA_BASE_URL=http://waha:3000
+WAHA_API_KEY=replace_me
+WAHA_SESSION=default
+
+# Database
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE
+DATABASE_SSLMODE=require
+
+# Tencent CloudBase
+CLOUDBASE_ENV_ID=replace_me
+CLOUDBASE_REGION=ap-singapore
+
+# TokenHub
+TENCENT_API_KEY=replace_me
+TENCENT_BASE_URL=https://tokenhub-intl.tencentmaas.com/v1
+TENCENT_CHAT_MODEL=hy3
+TENCENT_VISION_MODEL=hy-vision-2.0-instruct
+TENCENT_TEXT_EMBEDDING=kinfra-text-embedding-0.6b
+TENCENT_IMAGE_EMBEDDING=kinfra-vl-embedding-2b
+
+# Queue
+REDIS_URL=redis://redis:6379/0
+
+# External data
+BMKG_BASE_URL=replace_me
+MARKET_DATA_SOURCE=replace_me
+```
+
+Nama model di atas adalah kandidat dari rancangan migrasi kita. Sebelum dipakai, verifikasi kembali ID model, akses akun, dukungan format request, dimensi embedding, dan kuota pada TokenHub. Jangan menganggap semua model mendukung format API atau fitur yang sama.
+
+## 8. Kubernetes: kapan mulai digunakan?
+
+Saya tetap merekomendasikan Kubernetes, tetapi bertahap.
+
+| Tahapan                    | Infrastruktur               | Teknologi                  |
+| -------------------------- | --------------------------- | -------------------------- |
+| Tahap 1 — MVP              | 1 VPS 2 GB                  | Docker Compose             |
+| Tahap 2 — Stabil           | VPS 4 GB atau lebih         | K3s                        |
+| Tahap 3 — Scale            | Beberapa node               | K3s / Kubernetes           |
+| Tahap 4 — Production scale | Infrastruktur terdistribusi | Kubernetes + observability |
+
+Saat berpindah ke K3s, komponen dapat dipisah menjadi Deployment, Service, ConfigMap, Secret, PersistentVolume, dan Ingress.
+
+Contoh pembagian workload:
+
+- `tani-api`: FastAPI.
+- `tani-worker`: pemrosesan konsultasi.
+- `waha`: WhatsApp gateway.
+- `redis`: antrean pekerjaan.
+- `nginx-ingress`: akses HTTPS.
+- `cloudbase`: database eksternal, tidak dijalankan dalam cluster.
+
+Jangan menganggap satu node K3s sudah memberikan high availability. Untuk HA dibutuhkan beberapa node dan rancangan control plane yang sesuai.
+
+## 9. Tahapan migrasi dari Supabase ke Tencent
+
+Saya sarankan migrasi tidak dilakukan sekaligus secara langsung di production.
+
+1. Audit Supabase
+
+   Inventarisasi tabel, relasi, trigger, function, RPC, RLS, bucket, metadata storage, Auth, dan embedding.
+2. Bangun CloudBase staging
+
+   Buat environment PG Mode baru di Singapore. Aktifkan ekstensi yang dibutuhkan dan siapkan schema serta kebijakan akses.
+3. Migrasi database
+
+   Transfer struktur dan data, kemudian validasi jumlah baris, UUID, foreign key, sequence, trigger, dan function.
+4. Migrasi Storage
+
+   Salin objek foto dan dokumen. Validasi path, ukuran, MIME type, checksum, dan kepemilikan.
+5. Migrasi Auth
+
+   Pindahkan identitas dan metadata yang kompatibel. Jika password hash tidak kompatibel, gunakan mekanisme reset atau aktivasi ulang.
+6. Migrasi AI
+
+   Ganti Gemini dengan adapter TokenHub. Uji chat, vision, embedding, dan Visual RAG secara terpisah.
+7. Integration testing
+
+   Uji konsultasi teks, diagnosis foto, harga, cuaca, pupuk, riwayat, dan hak akses pengguna.
+8. Cutover
+
+   Hentikan sementara penulisan ke Supabase, lakukan sinkronisasi akhir, ubah konfigurasi aplikasi, lalu pantau sistem.
+
+Jangan menghapus Supabase sebelum semua data dan fitur di Tencent tervalidasi.
+
+## 10. Target kapasitas dan monitoring
+
+Untuk VPS 2 vCPU / 2 GB, target awalnya adalah menjalankan pilot dengan beban ringan, bukan menjanjikan kapasitas pengguna tertentu.
+
+Hal yang perlu dipantau:
+
+| Metrik          | Tujuan                               |
+| --------------- | ------------------------------------ |
+| CPU usage       | Mengetahui beban API dan worker      |
+| RAM usage       | Menghindari OOM kill                 |
+| Disk usage      | Mengawasi log dan file sementara     |
+| API latency     | Mengukur waktu respons               |
+| Queue depth     | Melihat antrean konsultasi           |
+| AI latency      | Mengukur waktu respons TokenHub      |
+| Webhook failure | Memantau pesan gagal diproses        |
+| DB connection   | Mencegah koneksi database berlebihan |
+| Error rate      | Menemukan gangguan fitur             |
+
+Prioritaskan juga retry dengan batas percobaan, dead-letter queue, timeout, dan idempotency supaya pesan yang sama tidak menghasilkan konsultasi ganda.
+
+## 11. Keputusan arsitektur final
+
+# TaniPintar Bot — Target Architecture
+
+Direkomendasikan untuk MVP
+
+Tencent Lighthouse Singapore
+
+FastAPI · LangGraph · WAHA · Redis · Worker · Nginx
+
+Tencent CloudBase PG Mode
+
+PostgreSQL · Auth · RLS · pgvector
+
+Tencent TokenHub
+
+Hy3 · Vision · Text Embedding · Visual Embedding
+
+Tencent Cloud Storage
+
+Foto konsultasi · Galeri penyakit · Dokumen
+
+External Data Providers
+
+BMKG · Sumber harga pasar terverifikasi
+
+Menurut saya, ini arsitektur paling masuk akal untuk kondisi proyek sekarang. Kita mempertahankan LangGraph dan struktur agent yang sudah ada, mengganti lapisan Gemini dan Supabase secara terukur, serta tidak membebani VPS dengan database dan model AI lokal.
+
+Satu hal penting: harga CloudBase, Storage, TokenHub, bandwidth, dan biaya operasional lain harus dihitung terpisah dari promo Lighthouse. Jangan menganggap keseluruhan sistem otomatis gratis hanya karena VPS-nya murah.
+
+Langkah implementasi berikutnya: audit repository TaniPintar yang sekarang, lalu buat dokumen `ARCHITECTURE.md`, `MIGRATION_PLAN.md`, dan `IMPLEMENTATION_PLAN.md` yang benar-benar sesuai struktur kode aktual. Dengan begitu, OpenCode bisa mengerjakannya secara bertahap tanpa merusak fitur yang sudah berjalan.

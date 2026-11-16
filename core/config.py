@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     meta_wa_access_token: str = Field(default="", alias="META_WA_ACCESS_TOKEN")
     meta_wa_verify_token: str = Field(default="tanipintar_webhook_verify_token_secret", alias="META_WA_VERIFY_TOKEN")
     meta_graph_version: str = Field(default="v20.0", alias="META_GRAPH_VERSION")
+    # App Secret Meta untuk verifikasi header X-Hub-Signature-256 pada webhook POST /webhook
+    meta_app_secret: str = Field(default="", alias="META_APP_SECRET")
 
     # WhatsApp Provider (meta atau waha)
     whatsapp_provider: str = Field(default="waha", alias="WHATSAPP_PROVIDER")
@@ -42,7 +44,8 @@ class Settings(BaseSettings):
 
     # Guardrails & Admin
     confidence_threshold: float = Field(default=0.70, alias="CONFIDENCE_THRESHOLD")
-    admin_api_key: str = Field(default="tanipintar_admin_secret_2026", alias="ADMIN_API_KEY")
+    # Tidak ada default: jika ADMIN_API_KEY kosong, seluruh endpoint admin otomatis menolak akses.
+    admin_api_key: str = Field(default="", alias="ADMIN_API_KEY")
 
     # Weather API (WeatherAPI.com)
     weather_api_key: str = Field(default="", alias="WEATHER_API_KEY")
